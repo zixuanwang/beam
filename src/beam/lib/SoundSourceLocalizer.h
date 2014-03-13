@@ -16,7 +16,7 @@ public:
 	SoundSourceLocalizer();
 	~SoundSourceLocalizer();
 	void init(float sample_rate, int frame_size);
-	bool process(const std::vector<std::vector<std::complex<float> > >& input_channels, float* p_angle, float* p_weight);
+	void process(const std::vector<std::vector<std::complex<float> > >& input_channels, float* p_angle, float* p_weight);
 
 private:
 	// sythetic data.

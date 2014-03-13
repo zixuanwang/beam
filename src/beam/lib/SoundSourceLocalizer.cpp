@@ -25,11 +25,6 @@ void SoundSourceLocalizer::init(float sample_rate, int frame_size){
 	m_meas_bins = m_end_bin - m_start_bin + 1;
 	for (int pair = 0; pair < (MAX_MICROPHONES - 1); ++pair){
 		for (int angle = 0; angle < NUM_ANGLES; ++angle){
-			m_delta[pair][angle] = NULL;
-		}
-	}
-	for (int pair = 0; pair < (MAX_MICROPHONES - 1); ++pair){
-		for (int angle = 0; angle < NUM_ANGLES; ++angle){
 			m_delta[pair][angle] = std::unique_ptr<float[]>(new float[m_meas_bins]);
 		}
 	}
@@ -60,12 +55,9 @@ void SoundSourceLocalizer::init(float sample_rate, int frame_size){
 	}
 }
 
-bool SoundSourceLocalizer::process(const std::vector<std::vector<std::complex<float> > >& input_channels, float* p_angle, float* p_weight){
+void SoundSourceLocalizer::process(const std::vector<std::vector<std::complex<float> > >& input_channels, float* p_angle, float* p_weight){
 	float delta[MAX_MICROPHONES - 1];
-	float ssl_sum[NUM_ANGLES];
-	for (int angle = 0; angle < NUM_ANGLES; ++angle){
-		ssl_sum[angle] = 0.f;
-	}
+	float ssl_sum[NUM_ANGLES] = { 0.f };
 	int bin, meas_bin;
 	for (bin = m_start_bin, meas_bin = 0; bin < m_end_bin; ++bin, ++meas_bin){
 		float sample_amplitude = std::abs(input_channels[0][bin]);
@@ -102,5 +94,4 @@ bool SoundSourceLocalizer::process(const std::vector<std::vector<std::complex<fl
 		*p_angle = Math::interpolateMax(x, y);
 	}
 	*p_weight = weight_max / m_meas_bins / NUM_ANGLES;
-	return true;
 }
