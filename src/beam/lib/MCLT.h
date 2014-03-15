@@ -14,7 +14,7 @@ public:
 	~MCLT();
 	/// compute MCLT.
 	/// the input size is 2 * M and the output are M complex numbers.
-	void compute(double* input, std::complex<double>* output);
+	void compute(double* input, double* re, double* im);
 private:
 	int m_M;
 	double m_coeff;
