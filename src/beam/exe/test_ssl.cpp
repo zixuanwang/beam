@@ -1,13 +1,19 @@
 #include <iostream>
-#include "beam\lib\kiss_fft.h"
+#include "beam\lib\MCLT.h"
 #include "beam\lib\SoundSourceLocalizer.h"
 
 
 int main(int argc, char* argv[]){
-	kiss_fft_cfg cfg = kiss_fft_alloc(5, 0, 0, 0);
-	kiss_fft_cpx input[5] = { kiss_fft_cpx{ 1.f, 0.f }, kiss_fft_cpx{ 2.f, 0.f }, kiss_fft_cpx{ 3.f, 0.f }, kiss_fft_cpx{ 4.f, 0.f }, kiss_fft_cpx{ 5.f, 0.f } };
-	kiss_fft_cpx output[5];
-	kiss_fft(cfg, input, output);
-	free(cfg);
+	int M = 2;
+	MCLT mclt(M);
+	double input[4];
+	input[0] = 1.0;
+	input[1] = 2.0;
+	input[2] = 3.0;
+	input[3] = 4.0;
+	std::complex<double> output[2];
+	mclt.compute(input, output);
+	//mclt.compute(input, output);
+
 	return 0;
 }

@@ -8,38 +8,38 @@ Microphone::~Microphone(){
 
 }
 
-std::complex<float> Microphone::micRatio(float cos_theta, float freq){
+std::complex<double> Microphone::micRatio(double cos_theta, double freq){
 	return microphoneDirectivity(freq, cos_theta, 1.f, 0.f);
 }
 
-std::complex<float> Microphone::microphoneDirectivity(float freq, float cos_theta, float alpha, float beta){
-	return std::complex<float>(alpha, 0.f) + (gradientMicrophoneDirectivity(freq, cos_theta) * beta);
+std::complex<double> Microphone::microphoneDirectivity(double freq, double cos_theta, double alpha, double beta){
+	return std::complex<double>(alpha, 0.0) + (gradientMicrophoneDirectivity(freq, cos_theta) * beta);
 }
 
-std::complex<float> Microphone::gradientMicrophoneDirectivity(float freq, float cos_theta){
+std::complex<double> Microphone::gradientMicrophoneDirectivity(double freq, double cos_theta){
 	//	Parameters for typical ideal gradient microphone
-	float delta = 0.005f; // 5 millimeters delay
-	float tau = delta / SOUND_SPEED;
-	float filt_tau = 0.01f;
-	float r = 10e6f;
-	float c = filt_tau / r;
-	std::complex<float> z_c, z_r, gain, z_c_1000, ratio_1000, gain_1000, ratio;
-	std::complex<float> one(1.f, 0.f);
-	if (freq < 1e-10f){
-		z_c = std::complex<float>(0.f, 1e-10f);
+	double delta = 0.005; // 5 millimeters delay
+	double tau = delta / SOUND_SPEED;
+	double filt_tau = 0.01;
+	double r = 10e6;
+	double c = filt_tau / r;
+	std::complex<double> z_c, z_r, gain, z_c_1000, ratio_1000, gain_1000, ratio;
+	std::complex<double> one(1.0, 0.0);
+	if (freq < 1e-10){
+		z_c = std::complex<double>(0.0, 1e-10);
 	}
 	else{
-		z_c = std::complex<float>(0.f, 1.f / (2.f * Math::PI * freq * c));
+		z_c = std::complex<double>(0.0, 1.0 / (2.0 * PI * freq * c));
 	}
-	z_r = std::complex<float>(r, 0.f);
+	z_r = std::complex<double>(r, 0.0);
 	gain = z_c / (z_c + z_r);
-	z_c_1000 = std::complex<float>(0.f, 1.f / (2.f * Math::PI * 1000.f * c));
+	z_c_1000 = std::complex<double>(0.0, 1.0 / (2.0 * PI * 1000.0 * c));
 	gain_1000 = z_c_1000 / (z_c_1000 + z_r);
-	float im = 2000.f * Math::PI * tau;
-	ratio_1000 = one - (one / std::complex<float>(cosf(im), sinf(im)));
+	double im = 2000.0 * PI * tau;
+	ratio_1000 = one - (one / std::complex<double>(cos(im), sin(im)));
 	ratio_1000 *= gain_1000;
-	im = 2.f * Math::PI * freq * tau * cos_theta;
-	ratio = one - (one / std::complex<float>(cosf(im), sinf(im)));
+	im = 2.0 * PI * freq * tau * cos_theta;
+	ratio = one - (one / std::complex<double>(cos(im), sin(im)));
 	ratio *= gain;
 	ratio /= ratio_1000;
 	return ratio;

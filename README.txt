@@ -13,19 +13,15 @@
 Building the project using CMake from the command-line:
 ----------------------------------------------------------
 Linux:
-    export OpenCV_DIR="~/OpenCV/build"
-    export Boost_ROOT="~/boost"
     mkdir build
     cd build
-    cmake -D OpenCV_DIR=$OpenCV_DIR -D Boost_ROOT=$Boost_ROOT ../src
+    cmake ../src
     make
 
 Windows (MS Visual Studio):
-    set OpenCV_DIR="C:\opencv\build"
-    set Boost_ROOT="C:\boost"
     mkdir build
     cd build
-    cmake -G "Visual Studio 11 Win64" -D OpenCV_DIR=%OpenCV_DIR% -D Boost_ROOT=%Boost_ROOT% ../src
+    cmake -G "Visual Studio 11 Win64" -DCMAKE_PREFIX_PATH=c:/lib ../src
     start gvlad.sln 
     
 - A static library will be written to the "lib" directory.

@@ -4,28 +4,28 @@
 #include <complex>
 #include "Math.h"
 
-#define SOUND_SPEED 342.0f;
+#define SOUND_SPEED 342.0;
 
 class Microphone {
 public:
 	Microphone();
 	~Microphone();
 	/// returns the complex gain for omni microphones.
-	static std::complex<float> micRatio(float cos_theta, float freq);
+	static std::complex<double> micRatio(double cos_theta, double freq);
 	/// returns the complex gain for ideal microphone given alpha and beta
-	static std::complex<float> microphoneDirectivity(float freq, float cos_theta, float alpha, float beta);
+	static std::complex<double> microphoneDirectivity(double freq, double cos_theta, double alpha, double beta);
 	/// returns the complex gain for ideal gradient microphone.
-	static std::complex<float> gradientMicrophoneDirectivity(float freq, float cos_theta);
+	static std::complex<double> gradientMicrophoneDirectivity(double freq, double cos_theta);
 
 
 	/// coordinates of the microphone.
-	float x;
-	float y;
-	float z;
+	double x;
+	double y;
+	double z;
 	/// direction of the microphone.
-	float direction;
+	double direction;
 	/// elevation of the microphone.
-	float elevation;
+	double elevation;
 };
 
 #endif /* MICROPHONE_H_ */

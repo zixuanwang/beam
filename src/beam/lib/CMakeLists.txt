@@ -1,11 +1,13 @@
 SET(libbeam_sources
-	_kiss_fft_guts.h
-	kiss_fft.h kiss_fft.c
+	fftw3.h
 	Math.h Math.cpp
+	MCLT.h MCLT.cpp
 	Microphone.h Microphone.cpp
 	MicrophoneArray.h MicrophoneArray.cpp
 	SoundSourceLocalizer.h SoundSourceLocalizer.cpp
 	
 )
 ADD_LIBRARY(libbeam ${libbeam_sources})
+
+TARGET_LINK_LIBRARIES(libbeam)
 
