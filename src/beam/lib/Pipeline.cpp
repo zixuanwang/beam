@@ -3,7 +3,7 @@
 namespace Beam{
 	Pipeline* Pipeline::p_instance = NULL;
 
-	Pipeline::Pipeline(){
+	Pipeline::Pipeline() : m_noise_floor(20.0, 0.04, 30000.0, 0.0){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			m_ssl_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 10.f);
 			m_pre_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
@@ -28,7 +28,7 @@ namespace Beam{
 		}
 	}
 
-	void Pipeline::source_localize(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, double time){
+	bool Pipeline::source_localize(std::vector<std::complex<float> >* input, double time, float* p_angle){
 		//  Apply the SSL band pass filter to the input channels
 		//  and have a separate copy of the input channels 
 		//  for SSL purposes only
@@ -46,15 +46,16 @@ namespace Beam{
 			energy += (double)Utils::computeRMS(input[channel]);
 		}
 		energy /= MAX_MICROPHONES;
-		Tracker noise_floor(20.0, 0.04, 30000.0, 0.0);
-		noise_floor.nextLevel(time, energy);
-		double floor = noise_floor.getLevel();
-		if ((energy > 5.290792 * floor) && (energy > 82.305741)){
+		double floor = m_noise_floor.nextLevel(time, energy);
+		// TODO: change the hard coding parameters.
+		if ((energy > 5.290792 * floor) && (energy > 0.005)){
 			// sound signal
 			SoundSourceLocalizer ssl;
 			ssl.init(SAMPLE_RATE, FRAME_SIZE);
-			float angle, weight;
-			ssl.process(input, &angle, &weight);
+			float weight;
+			ssl.process(input, p_angle, &weight);
+			return true;
 		}
+		return false;
 	}
 }

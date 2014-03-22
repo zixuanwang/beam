@@ -72,7 +72,7 @@ namespace Beam{
 			for (int angle = 0; angle < NUM_ANGLES; ++angle){
 				float dist = 0.0;
 				for (int pair = 0; pair < (MAX_MICROPHONES - 1); ++pair){
-					float c = Utils::normalize_angle(delta[pair] - m_delta[pair][angle][bin]);
+					float c = Utils::normalize_angle(delta[pair] - m_delta[pair][angle][meas_bin]);
 					dist += c * c;
 				}
 				if (dist < min_dist){
