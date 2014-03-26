@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include "DSPFilter.h"
+#include "MicArrayDescriptor.h"
+#include "MicArrayWeights.h"
 #include "NoiseSuppressor.h"
 #include "SoundSourceLocalizer.h"
 #include "Tracker.h"
@@ -27,6 +29,7 @@ namespace Beam{
 		NoiseSuppressor m_ssl_noise_suppressor[MAX_MICROPHONES]; // for noise suppression in ssl.
 		std::vector<std::complex<float> > m_ssl_band_pass_filter;
 		Tracker m_noise_floor; // VAD
+		SoundSourceLocalizer m_ssl;
 	};
 }
 

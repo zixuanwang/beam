@@ -1,10 +1,13 @@
 SET(libbeam_sources
-	fftw3.h
+	Coords.h
 	DSPFilter.h DSPFilter.cpp
+	fftw3.h
 	GlobalConfig.h
+	KinectConfig.h
 	MCLT.h MCLT.cpp
+	MicArrayDescriptor.h
+	MicArrayWeights.h
 	Microphone.h Microphone.cpp
-	MicrophoneArray.h MicrophoneArray.cpp
 	NoiseSuppressor.h NoiseSuppressor.cpp
 	Pipeline.h Pipeline.cpp
 	SoundSourceLocalizer.h SoundSourceLocalizer.cpp

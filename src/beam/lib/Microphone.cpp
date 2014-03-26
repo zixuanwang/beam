@@ -1,8 +1,7 @@
 #include "Microphone.h"
 
 namespace Beam{
-	Microphone::Microphone(){
-
+	Microphone::Microphone(int _id, float _x, float _y, float _z, int _type, float _direction, float _elevation) : id(_id), x(_x), y(_y), z(_z), type(_type), direction(_direction), elevation(_elevation){
 	}
 
 	Microphone::~Microphone(){

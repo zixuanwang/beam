@@ -9,6 +9,7 @@ namespace Beam{
 			m_pre_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
 		}
 		DSPFilter::band_pass(m_ssl_band_pass_filter, 500.0 / SAMPLE_RATE, 1000.0 / SAMPLE_RATE, 2000.0 / SAMPLE_RATE, 3500.0 / SAMPLE_RATE);
+		m_ssl.init(SAMPLE_RATE, FRAME_SIZE);
 	}
 
 	Pipeline* Pipeline::instance(){
@@ -19,6 +20,7 @@ namespace Beam{
 	}
 
 	void Pipeline::load_profile(){
+		// initialize kinect weights
 
 	}
 
@@ -48,12 +50,20 @@ namespace Beam{
 		energy /= MAX_MICROPHONES;
 		double floor = m_noise_floor.nextLevel(time, energy);
 		// TODO: change the hard coding parameters.
-		if ((energy > 5.290792 * floor) && (energy > 0.005)){
+		if (energy > 5.290792 * floor){
 			// sound signal
-			SoundSourceLocalizer ssl;
-			ssl.init(SAMPLE_RATE, FRAME_SIZE);
+			float angle;
 			float weight;
-			ssl.process(input, p_angle, &weight);
+			float confidence;
+			float std_dev;
+			int valid;
+			int num;
+			m_ssl.process(input, &angle, &weight);
+			std::cout << "weight: " << weight << std::endl;
+			if (weight > SSL_CONTRAST_THRESHOLD){
+				m_ssl.process_next_sample(time, angle, weight);
+			}
+			m_ssl.get_average(time, p_angle, &confidence, &std_dev, &num, &valid);
 			return true;
 		}
 		return false;
