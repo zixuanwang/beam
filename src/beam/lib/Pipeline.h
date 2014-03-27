@@ -25,11 +25,17 @@ namespace Beam{
 		Pipeline(Pipeline&);
 		Pipeline& operator=(Pipeline&);
 		static Pipeline* p_instance;
-		NoiseSuppressor m_pre_noise_suppressor[MAX_MICROPHONES]; // for phase compensation.
+		NoiseSuppressor m_pre_noise_suppressor[MAX_MICROPHONES]; // for phase compensation in the preprocessing.
 		NoiseSuppressor m_ssl_noise_suppressor[MAX_MICROPHONES]; // for noise suppression in ssl.
+		NoiseSuppressor m_out_noise_suppressor[MAX_MICROPHONES]; // for frequency shifting the output.
 		std::vector<std::complex<float> > m_ssl_band_pass_filter;
 		Tracker m_noise_floor; // VAD
 		SoundSourceLocalizer m_ssl;
+
+		//
+		std::vector<std::complex<float> > m_pcm_weights[MAX_BEAMS][MAX_MICROPHONES];
+		std::vector<std::complex<float> > m_dynamic_gains[MAX_MICROPHONES];
+		std::complex<float> m_persistent_gains[MAX_MICROPHONES][MAX_GAIN_SUBBANDS];
 	};
 }
 

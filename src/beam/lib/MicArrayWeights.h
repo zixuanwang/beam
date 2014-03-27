@@ -10,9 +10,9 @@ namespace Beam{
 	class MicArrayWeights {
 	public:
 		std::string mic_array_name;
-		unsigned long num_channels;
-		unsigned long num_frequency_bins;
-		unsigned long num_beams;
+		int num_channels;
+		int num_frequency_bins;
+		int num_beams;
 		float correlation;
 		Coords* beams;
 		float* frequencies;

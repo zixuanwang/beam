@@ -70,6 +70,22 @@ namespace Beam{
 				v /= n;
 			}
 		}
+		/// interpolate two complex numbers
+		template<typename T>
+		static std::complex<T> interpolate(const std::complex<T>& p0, const std::complex<T>& p1, T t){
+			T rho0 = std::abs(p0);
+			T rho1 = std::abs(p1);
+			T rho = rho0 + (t * (rho1 - rho0));
+			T fi0 = normalize_angle(std::arg(p0));
+			T fi1 = normalize_angle(std::arg(p1));
+			T ffi = fi1 - fi0;
+			if (ffi > (T)PI) ffi -= (T)TWO_PI;
+			if (ffi <= (T)-PI) ffi += (T)TWO_PI;
+			ffi = fi0 + t * ffi;
+			std::complex<T> result(rho * cos(ffi), rho * sin(ffi));
+			return result;
+		}
+
 		template<typename T>
 		static T computeRMS(const std::vector<std::complex<T> >& array){
 			T energy = (T)0;

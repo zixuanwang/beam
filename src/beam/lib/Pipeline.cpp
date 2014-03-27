@@ -7,6 +7,7 @@ namespace Beam{
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			m_ssl_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 10.f);
 			m_pre_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
+			m_out_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
 		}
 		DSPFilter::band_pass(m_ssl_band_pass_filter, 500.0 / SAMPLE_RATE, 1000.0 / SAMPLE_RATE, 2000.0 / SAMPLE_RATE, 3500.0 / SAMPLE_RATE);
 		m_ssl.init(SAMPLE_RATE, FRAME_SIZE);
@@ -20,8 +21,66 @@ namespace Beam{
 	}
 
 	void Pipeline::load_profile(){
+		for (int beam = 0; beam < MAX_BEAMS; ++beam){
+			for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+				m_pcm_weights[beam][channel].assign(FRAME_SIZE, std::complex<float>(0.f, 0.f));
+			}
+		}
 		// initialize kinect weights
-
+		std::complex<float> zero(0.f, 0.f);
+		float freq_step = (float)SAMPLE_RATE / FRAME_SIZE / 2.f;
+		float freq_beg = freq_step / 2.f;
+		for (int beam = 0; beam < kinect_weights.num_beams; ++beam){
+			int interp_low = 0;
+			int interp_high = 1;
+			while (kinect_descriptor.freq_low >= kinect_weights.frequencies[interp_low] && interp_high < kinect_weights.num_frequency_bins - 1){
+				++interp_high;
+				++interp_low;
+			}
+			for (int bin = 0; bin < FRAME_SIZE; ++bin){
+				float freq = freq_beg + bin * freq_step;
+				if (freq > kinect_descriptor.freq_high){
+					freq = kinect_descriptor.freq_high;
+				}
+				while (freq >= kinect_weights.frequencies[interp_high] && interp_high < kinect_weights.num_frequency_bins - 1){
+					++interp_high;
+				}
+				interp_low = interp_high - 1;
+				float t = (freq - kinect_weights.frequencies[interp_low]) / (kinect_weights.frequencies[interp_high] - kinect_weights.frequencies[interp_low]);
+				if (freq <= kinect_descriptor.freq_low){
+					for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+						m_pcm_weights[beam][channel][bin] *= 0.f;
+					}
+				}
+				else if (t < 0.f){
+					int freq_index = kinect_weights.frequencies[interp_low] > kinect_descriptor.freq_low ? interp_low : interp_high;
+					t = (freq - kinect_descriptor.freq_low) / (kinect_weights.frequencies[freq_index] - kinect_descriptor.freq_low);
+					for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+						int weight_index = beam * kinect_weights.num_frequency_bins * kinect_weights.num_channels;
+						weight_index += freq_index * kinect_weights.num_channels;
+						weight_index += channel;
+						m_pcm_weights[beam][channel][bin] = Utils::interpolate(zero, kinect_weights.weights[weight_index + kinect_weights.num_channels], t);
+					}
+				}
+				else if (t == 0.f || t >= 1.f){
+					int freq_index = t > 0.f ? interp_high : interp_low;
+					for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+						int weight_index = beam * kinect_weights.num_frequency_bins * kinect_weights.num_channels;
+						weight_index += freq_index * kinect_weights.num_channels;
+						weight_index += channel;
+						m_pcm_weights[beam][channel][bin] = kinect_weights.weights[weight_index];
+					}
+				}
+				else{
+					for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+						int weight_index = beam * kinect_weights.num_frequency_bins * kinect_weights.num_channels;
+						weight_index += interp_low * kinect_weights.num_channels;
+						weight_index += channel;
+						m_pcm_weights[beam][channel][bin] = Utils::interpolate(kinect_weights.weights[weight_index], kinect_weights.weights[weight_index + kinect_weights.num_channels], t);
+					}
+				}
+			}
+		}
 	}
 
 	void Pipeline::preprocess(std::vector<std::complex<float> >* input){
