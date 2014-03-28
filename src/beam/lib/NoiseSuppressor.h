@@ -12,6 +12,7 @@ namespace Beam{
 		void init(float frequency, int frame_size, float adaptive_tau, float suppress);
 		void phase_compensation(std::vector<std::complex<float> >& output);
 		void noise_compensation(std::vector<std::complex<float> >& output);
+		void frequency_shifting(std::vector<std::complex<float> >& output);
 		void set_suppress(float suppress);
 	private:
 		float m_frame_duration;

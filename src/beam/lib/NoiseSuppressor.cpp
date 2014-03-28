@@ -78,7 +78,7 @@ namespace Beam{
 			float phase_var = m_phase_model_variance[i];
 			float ratio = 0.f;
 			if (phase_var != 0.f){
-				ratio = expf(delta / phase_var / 4.f);
+				ratio = expf(-delta / phase_var / 4.f);
 			}
 			float adapt = phase_adaptive_ratio * ratio;
 			if (adapt < 1.f){
@@ -168,6 +168,23 @@ namespace Beam{
 			output[i] *= gain;
 		}
 		++m_noise_num_frames;
+	}
+
+	void NoiseSuppressor::frequency_shifting(std::vector<std::complex<float> >& output){
+		int bins = (int)output.size();
+		for (int i = 1; i < bins; ++i){
+			std::complex<float> element_l = output[i - 1];
+			std::complex<float> element_r = output[i];
+			float mag_l = std::abs(element_l);
+			float arg_l = std::arg(element_l);
+			float mag_r = std::abs(element_r);
+			float arg_r = std::arg(element_r);
+			float mag = 0.8f * mag_l + 0.2f * mag_r;
+			float arg = 0.8f * arg_l + 0.2f * arg_r;
+			std::complex<float> element(mag * cosf(arg), mag * sinf(arg));
+			output[i - 1] = element;
+		}
+		output.back() *= 0.f;
 	}
 
 	void NoiseSuppressor::set_suppress(float suppress){
