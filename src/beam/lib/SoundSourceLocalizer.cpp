@@ -6,9 +6,9 @@ namespace Beam{
 	SoundSourceLocalizer::SoundSourceLocalizer(){
 		m_new_sample = false;
 		m_last_time = 0.0;
-		float step = (float)PI / NUM_CLUSTERS;
-		m_lower_boundary[0] = 0.f;
-		m_upper_boundary[0] = 2.f * step;
+		float step = (float)TWO_PI / NUM_CLUSTERS;
+		m_lower_boundary[0] = (float)-PI;
+		m_upper_boundary[0] = m_lower_boundary[0] + 2.f * step;
 		for (int i = 1; i < NUM_CLUSTERS; ++i){
 			m_lower_boundary[i] = m_lower_boundary[i - 1] + step;
 			m_upper_boundary[i] = m_upper_boundary[i - 1] + step;
@@ -23,8 +23,8 @@ namespace Beam{
 		m_sample_rate = sample_rate;
 		m_frame_size = frame_size;
 		std::complex<float> gain[MAX_MICROPHONES];
-		double beg_angle = 0.0;
-		double end_angle = PI;
+		double beg_angle = -HALF_PI;
+		double end_angle = HALF_PI;
 		double step_angle = PI / (NUM_ANGLES - 1);
 		for (int angle = 0; angle < NUM_ANGLES; ++angle){
 			m_angle[angle] = (float)(beg_angle + step_angle * angle);
@@ -46,15 +46,15 @@ namespace Beam{
 				float y = DISTANCE * sinf(m_angle[angle]);
 				float z = 0.f;
 				for (int mic = 0; mic < MAX_MICROPHONES; ++mic){
-					float dx = x - kinect_descriptor.mic[mic].x;
-					float dy = y - kinect_descriptor.mic[mic].y;
-					float dz = z - kinect_descriptor.mic[mic].z;
+					float dx = x - KinectConfig::kinect_descriptor.mic[mic].x;
+					float dy = y - KinectConfig::kinect_descriptor.mic[mic].y;
+					float dz = z - KinectConfig::kinect_descriptor.mic[mic].z;
 					float dist = sqrtf(dx * dx + dy * dy + dz * dz);
 					float xy_dist = sqrtf(dx * dx + dy * dy);
 					float gamma = atan2(dy, dx);
 					float cappa = atan2(dz, xy_dist);
-					gamma -= (float)(kinect_descriptor.mic[mic].direction * TO_RAD);
-					cappa -= (float)(kinect_descriptor.mic[mic].elevation * TO_RAD);
+					gamma -= (float)(KinectConfig::kinect_descriptor.mic[mic].direction * TO_RAD);
+					cappa -= (float)(KinectConfig::kinect_descriptor.mic[mic].elevation * TO_RAD);
 					float cos_theta = cosf(gamma) * cosf(cappa);
 					float im = (float)(-TWO_PI * freq * dist / SOUND_SPEED);
 					gain[mic] = std::complex<float>(cosf(im), sinf(im)) * Microphone::micRatio(cos_theta, freq) * (1.f / dist);

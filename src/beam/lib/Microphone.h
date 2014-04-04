@@ -21,7 +21,7 @@ namespace Beam{
 		float direction;
 		/// elevation of the microphone.
 		float elevation;
-		/// returns the complex gain for omni microphones.
+		/// returns the complex gain for cardioid microphones.
 		static std::complex<float> micRatio(float cos_theta, float freq);
 		/// returns the complex gain for ideal microphone given alpha and beta
 		static std::complex<float> microphoneDirectivity(float freq, float cos_theta, float alpha, float beta);

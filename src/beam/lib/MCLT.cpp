@@ -36,6 +36,7 @@ namespace Beam{
 		fftw_plan p;
 		p = fftw_plan_r2r_1d(m_M, m_u.get(), m_u.get(), FFTW_REDFT11, FFTW_ESTIMATE);
 		fftw_execute(p);
+		fftw_destroy_plan(p);
 		p = fftw_plan_r2r_1d(m_M, m_v.get(), m_v.get(), FFTW_RODFT11, FFTW_ESTIMATE);
 		fftw_execute(p);
 		fftw_destroy_plan(p);

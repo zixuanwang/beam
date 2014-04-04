@@ -9,7 +9,7 @@ namespace Beam{
 			m_pre_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
 			m_out_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
 		}
-		DSPFilter::band_pass(m_ssl_band_pass_filter, 500.0 / SAMPLE_RATE, 1000.0 / SAMPLE_RATE, 2000.0 / SAMPLE_RATE, 3500.0 / SAMPLE_RATE);
+		DSPFilter::band_pass_mclt(m_ssl_band_pass_filter, 500.0 / SAMPLE_RATE, 1000.0 / SAMPLE_RATE, 2000.0 / SAMPLE_RATE, 3500.0 / SAMPLE_RATE);
 		m_ssl.init(SAMPLE_RATE, FRAME_SIZE);
 	}
 
@@ -30,53 +30,53 @@ namespace Beam{
 		std::complex<float> zero(0.f, 0.f);
 		float freq_step = (float)SAMPLE_RATE / FRAME_SIZE / 2.f;
 		float freq_beg = freq_step / 2.f;
-		for (int beam = 0; beam < kinect_weights.num_beams; ++beam){
+		for (int beam = 0; beam < KinectConfig::kinect_weights.num_beams; ++beam){
 			int interp_low = 0;
 			int interp_high = 1;
-			while (kinect_descriptor.freq_low >= kinect_weights.frequencies[interp_low] && interp_high < kinect_weights.num_frequency_bins - 1){
+			while (KinectConfig::kinect_descriptor.freq_low >= KinectConfig::kinect_weights.frequencies[interp_low] && interp_high < KinectConfig::kinect_weights.num_frequency_bins - 1){
 				++interp_high;
 				++interp_low;
 			}
 			for (int bin = 0; bin < FRAME_SIZE; ++bin){
 				float freq = freq_beg + bin * freq_step;
-				if (freq > kinect_descriptor.freq_high){
-					freq = kinect_descriptor.freq_high;
+				if (freq > KinectConfig::kinect_descriptor.freq_high){
+					freq = KinectConfig::kinect_descriptor.freq_high;
 				}
-				while (freq >= kinect_weights.frequencies[interp_high] && interp_high < kinect_weights.num_frequency_bins - 1){
+				while (freq >= KinectConfig::kinect_weights.frequencies[interp_high] && interp_high < KinectConfig::kinect_weights.num_frequency_bins - 1){
 					++interp_high;
 				}
 				interp_low = interp_high - 1;
-				float t = (freq - kinect_weights.frequencies[interp_low]) / (kinect_weights.frequencies[interp_high] - kinect_weights.frequencies[interp_low]);
-				if (freq <= kinect_descriptor.freq_low){
+				float t = (freq - KinectConfig::kinect_weights.frequencies[interp_low]) / (KinectConfig::kinect_weights.frequencies[interp_high] - KinectConfig::kinect_weights.frequencies[interp_low]);
+				if (freq <= KinectConfig::kinect_descriptor.freq_low){
 					for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 						m_pcm_weights[beam][channel][bin] *= 0.f;
 					}
 				}
 				else if (t < 0.f){
-					int freq_index = kinect_weights.frequencies[interp_low] > kinect_descriptor.freq_low ? interp_low : interp_high;
-					t = (freq - kinect_descriptor.freq_low) / (kinect_weights.frequencies[freq_index] - kinect_descriptor.freq_low);
+					int freq_index = KinectConfig::kinect_weights.frequencies[interp_low] > KinectConfig::kinect_descriptor.freq_low ? interp_low : interp_high;
+					t = (freq - KinectConfig::kinect_descriptor.freq_low) / (KinectConfig::kinect_weights.frequencies[freq_index] - KinectConfig::kinect_descriptor.freq_low);
 					for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-						int weight_index = beam * kinect_weights.num_frequency_bins * kinect_weights.num_channels;
-						weight_index += freq_index * kinect_weights.num_channels;
+						int weight_index = beam * KinectConfig::kinect_weights.num_frequency_bins * KinectConfig::kinect_weights.num_channels;
+						weight_index += freq_index * KinectConfig::kinect_weights.num_channels;
 						weight_index += channel;
-						m_pcm_weights[beam][channel][bin] = Utils::interpolate(zero, kinect_weights.weights[weight_index + kinect_weights.num_channels], t);
+						m_pcm_weights[beam][channel][bin] = Utils::interpolate(zero, KinectConfig::kinect_weights.weights[weight_index + KinectConfig::kinect_weights.num_channels], t);
 					}
 				}
 				else if (t == 0.f || t >= 1.f){
 					int freq_index = t > 0.f ? interp_high : interp_low;
 					for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-						int weight_index = beam * kinect_weights.num_frequency_bins * kinect_weights.num_channels;
-						weight_index += freq_index * kinect_weights.num_channels;
+						int weight_index = beam * KinectConfig::kinect_weights.num_frequency_bins * KinectConfig::kinect_weights.num_channels;
+						weight_index += freq_index * KinectConfig::kinect_weights.num_channels;
 						weight_index += channel;
-						m_pcm_weights[beam][channel][bin] = kinect_weights.weights[weight_index];
+						m_pcm_weights[beam][channel][bin] = KinectConfig::kinect_weights.weights[weight_index];
 					}
 				}
 				else{
 					for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-						int weight_index = beam * kinect_weights.num_frequency_bins * kinect_weights.num_channels;
-						weight_index += interp_low * kinect_weights.num_channels;
+						int weight_index = beam * KinectConfig::kinect_weights.num_frequency_bins * KinectConfig::kinect_weights.num_channels;
+						weight_index += interp_low * KinectConfig::kinect_weights.num_channels;
 						weight_index += channel;
-						m_pcm_weights[beam][channel][bin] = Utils::interpolate(kinect_weights.weights[weight_index], kinect_weights.weights[weight_index + kinect_weights.num_channels], t);
+						m_pcm_weights[beam][channel][bin] = Utils::interpolate(KinectConfig::kinect_weights.weights[weight_index], KinectConfig::kinect_weights.weights[weight_index + KinectConfig::kinect_weights.num_channels], t);
 					}
 				}
 			}
@@ -108,8 +108,7 @@ namespace Beam{
 		}
 		energy /= MAX_MICROPHONES;
 		double floor = m_noise_floor.nextLevel(time, energy);
-		// TODO: change the hard coding parameters.
-		if (energy > 5.290792 * floor){
+		if (energy > 5.290792 * floor){	// TODO: modify this threshold
 			// sound signal
 			float angle;
 			float weight;
@@ -119,11 +118,11 @@ namespace Beam{
 			int num;
 			m_ssl.process(input, &angle, &weight);
 			std::cout << "weight: " << weight << std::endl;
-			if (weight > SSL_CONTRAST_THRESHOLD){
+			if (weight > 5e-6f){ // TODO: modify this threshold
 				m_ssl.process_next_sample(time, angle, weight);
+				m_ssl.get_average(time, p_angle, &confidence, &std_dev, &num, &valid);
+				return true;
 			}
-			m_ssl.get_average(time, p_angle, &confidence, &std_dev, &num, &valid);
-			return true;
 		}
 		return false;
 	}

@@ -19,6 +19,7 @@ namespace Beam{
 		m_speed_adaptive_tau = adaptive_tau * 2.f;
 
 		m_noise_adaptive_tau = adaptive_tau;
+		m_sampling_rate = frequency;
 
 		set_suppress(suppress);
 
@@ -44,7 +45,7 @@ namespace Beam{
 			//  initialize it with one frame delay for each frequency
 			for (int bin = 0; bin < bins; ++bin){
 				float frequency = ((float)bin + 0.5f) * m_sampling_rate / 2.f / bins;
-				float phase = (float)(TWO_PI * frequency);
+				float phase = (float)(TWO_PI * m_frame_duration * frequency);
 				m_phase_model_update[bin] = std::complex<float>(cosf(phase), sinf(phase));
 			}
 		}

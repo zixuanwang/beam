@@ -1,9 +1,10 @@
 SET(libbeam_sources
 	Coords.h
 	DSPFilter.h DSPFilter.cpp
+	FFT.h FFT.cpp
 	fftw3.h
 	GlobalConfig.h
-	KinectConfig.h
+	KinectConfig.h KinectConfig.cpp
 	MCLT.h MCLT.cpp
 	MicArrayDescriptor.h
 	MicArrayWeights.h

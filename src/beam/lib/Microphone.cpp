@@ -9,7 +9,7 @@ namespace Beam{
 	}
 
 	std::complex<float> Microphone::micRatio(float cos_theta, float freq){
-		return microphoneDirectivity(freq, cos_theta, 1.f, 0.f);
+		return microphoneDirectivity(freq, cos_theta, 0.5f, 0.5f);
 	}
 
 	std::complex<float> Microphone::microphoneDirectivity(float freq, float cos_theta, float alpha, float beta){

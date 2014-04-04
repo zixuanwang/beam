@@ -3,8 +3,6 @@
 
 #include <iostream>
 #include "DSPFilter.h"
-#include "MicArrayDescriptor.h"
-#include "MicArrayWeights.h"
 #include "NoiseSuppressor.h"
 #include "SoundSourceLocalizer.h"
 #include "Tracker.h"
