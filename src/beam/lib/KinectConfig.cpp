@@ -41,7 +41,15 @@ namespace Beam{
 		}
 	};
 
-	Coords KinectConfig::kinect_beams[11] =
+	float KinectConfig::frequency_bands[MAX_GAIN_SUBBANDS][3] = 
+	{ { 300.f, 200.f, 450.f },
+	{ 600.f, 450.f, 800.f },
+	{ 1000.f, 800.f, 1500.f },
+	{ 2000.f, 1500.f, 3999.f },
+	{ 6000.f, 4000.f, 7999.f }
+	};
+
+	RCoords KinectConfig::kinect_beams[11] =
 	{
 		{ -0.873f, 0.f, 1.f },
 		{ -0.698f, 0.f, 1.f },

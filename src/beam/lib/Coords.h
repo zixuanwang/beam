@@ -2,11 +2,19 @@
 #define COORDS_H_
 
 namespace Beam{
-	class Coords {
+	/// Polar coordinate system.
+	class RCoords {
 	public:
 		float fi;
 		float theta;
 		float rho;
+	};
+	/// Cartesian coordinate system.
+	class CCoords{
+	public:
+		float x;
+		float y;
+		float z;
 	};
 }
 

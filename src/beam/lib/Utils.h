@@ -4,6 +4,7 @@
 #include <complex>
 #include <memory>
 #include <vector>
+#include "Coords.h"
 
 namespace Beam{
 #define PI 3.1415926535897932384626433832795
@@ -128,6 +129,119 @@ namespace Beam{
 				dXmax = x[1];
 			}
 			return dXmax;
+		}
+		/// convert coordinates from cartesian to polar
+		static void c2r(RCoords& c1, CCoords& c2){
+			c2r(c1, c2.x, c2.y, c2.z);
+		}
+		static void c2r(RCoords& c1, float x, float y, float z){
+			c1.rho = sqrtf(x * x + y * y + z * z);
+			c1.fi = atan2(y, x);
+			c1.theta = atan2(z, sqrtf(x * x + y * y));
+		}
+		static float approx(float* arrx, float* arry, int range, float* coeff, int points){
+			float dMa[20][20];
+			float *a[20];
+			float b[20];
+			int i, j, k;
+			float sigma, y, delta;
+			//   we have memory limitations
+			if (range >= 20){
+				return -1.f;
+			}
+			//   we need more points than range+1
+			if (points <= range){
+				return -1.f;
+			}
+			//  we need more than 1 point to avoid divde by zero
+			if (points <= 1){
+				return -1.f;
+			}
+			//   fill pointers array
+			for (i = 0; i < 20; i++){
+				a[i] = &dMa[i][0];
+				b[i] = 0.f;
+			}
+			//   Fill the matrix with values for polynomial approximation
+			for (i = 0; i <= range; i++){
+				for (j = 0; j <= range; j++){
+					a[i][j] = 0.f;
+					for (k = 0; k < points; k++){
+						a[i][j] = a[i][j] + ipow(arrx[k], (i + j));
+					}
+				}
+				b[i] = 0.f;
+				for (k = 0; k < points; k++)
+				{
+					b[i] = b[i] + arry[k] * ipow(arrx[k], i);
+				}
+			}
+
+			//   solve the system of linear equations
+			syst_gaus(range + 1, a, b, coeff);
+			//   calculate the standard deviation of the approximation
+			sigma = 0.f;
+			for (i = 0; i < points; i++){
+				//   use Horner algorithm for polinomial calculation
+				y = coeff[range];
+				for (j = range; j > 0; j--){
+					y = y * arrx[i] + coeff[j - 1];
+				}
+				delta = y - arry[i];
+				sigma += delta * delta;
+			}
+			sigma = sqrtf(sigma / (points - 1));
+			//   leave
+			return sigma;
+		}
+
+		static float ipow(float x, int i){
+			float p, x1;
+			int j;
+			if (i < 0){
+				i = -i;
+				x1 = 1.f / x;
+			}
+			else{
+				x1 = x;
+			}
+			p = 1.f;
+			for (j = 0; j < i; j++){
+				p = p * x1;
+			}
+			return p;
+		}
+
+		static void syst_gaus(int mm, float **matr_x, float *vect_y, float *param){
+			float x;
+			int i, j, k;
+			//---------------------------------------------
+			//  Calculate the triangular matrix - matr_x.
+			//---------------------------------------------
+			for (i = 0; i < mm; i++){
+				for (k = i + 1; k < mm; k++){
+					x = matr_x[k][i] / matr_x[i][i];
+					for (j = i + 1; j < mm; j++){
+						matr_x[k][j] = matr_x[k][j] - matr_x[i][j] * x;
+					}
+					vect_y[k] = vect_y[k] - vect_y[i] * x;
+				}
+			}
+			//-----------------------------------
+			//  Back moving - Jordan method.
+			//-----------------------------------
+			for (i = mm - 1; i > 0; i--){
+				for (k = i - 1; k >= 0; k--){
+					x = matr_x[k][i] / matr_x[i][i];
+					vect_y[k] = vect_y[k] - vect_y[i] * x;
+				}
+			}
+			//-----------------------------------
+			//  Calculate unknown parameters.
+			//-----------------------------------
+			for (i = 0; i < mm; i++){
+				param[i] = vect_y[i] / matr_x[i][i];
+			}
 		}
 	};
 }

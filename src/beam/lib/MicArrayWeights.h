@@ -14,7 +14,7 @@ namespace Beam{
 		int num_frequency_bins;
 		int num_beams;
 		float correlation;
-		Coords* beams;
+		RCoords* beams;
 		float* frequencies;
 		std::complex<float>* weights;
 		std::complex<float>* dd;

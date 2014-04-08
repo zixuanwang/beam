@@ -17,6 +17,10 @@ namespace Beam{
 		// if the sound source can be localized, true is returned and angle is store in p_angle.
 		// otherwise, false is returned.
 		bool source_localize(std::vector<std::complex<float> >* input, double time, float* p_angle);
+		void beamformer(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, double time);
+		/// not in use.
+		float smart_calibration(float sound_source, std::vector<std::complex<float> >* input);
+		void expand_gain();
 	private:
 		// singleton.
 		Pipeline();
@@ -29,6 +33,14 @@ namespace Beam{
 		std::vector<std::complex<float> > m_ssl_band_pass_filter;
 		Tracker m_noise_floor; // VAD
 		SoundSourceLocalizer m_ssl;
+		// for calibration
+		float m_coordinates[MAX_MICROPHONES];
+		float m_coeff[2];
+		std::vector<std::complex<float> > m_frequency_filter[MAX_GAIN_SUBBANDS];
+		std::vector<std::complex<float> > m_working_frequency;
+
+		// for beamformer
+		float m_confidence;
 
 		//
 		std::vector<std::complex<float> > m_pcm_weights[MAX_BEAMS][MAX_MICROPHONES];
