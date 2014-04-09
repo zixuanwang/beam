@@ -18,9 +18,9 @@ namespace Beam{
 		// otherwise, false is returned.
 		bool source_localize(std::vector<std::complex<float> >* input, double time, float* p_angle);
 		void beamformer(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, double time);
-		/// not in use.
 		float smart_calibration(float sound_source, std::vector<std::complex<float> >* input);
 		void expand_gain();
+		void ansi_bf_msr_process_quad_loop_fast(std::complex<float>* wo0, std::complex<float>* wo1, std::complex<float>* wo2, std::complex<float>* wo3, std::complex<float>& m0, std::complex<float>& m1, std::complex<float>& m2, std::complex<float>& m3, std::complex<float>& w0, std::complex<float>& w1, std::complex<float>& w2, std::complex<float>& w3, float nu, float mu);
 	private:
 		// singleton.
 		Pipeline();
@@ -38,9 +38,14 @@ namespace Beam{
 		float m_coeff[2];
 		std::vector<std::complex<float> > m_frequency_filter[MAX_GAIN_SUBBANDS];
 		std::vector<std::complex<float> > m_working_frequency;
+		int m_refresh_ini;
 
 		// for beamformer
 		float m_confidence;
+		float m_source_position;
+		int m_beam;
+		int m_first_bin;
+		int m_last_bin;
 
 		//
 		std::vector<std::complex<float> > m_pcm_weights[MAX_BEAMS][MAX_MICROPHONES];
