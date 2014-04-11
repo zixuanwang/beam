@@ -1,29 +1,43 @@
 #include "FFT.h"
 
 namespace Beam{
-	FFT::FFT(int n) : m_n(n){
-		for (int i = 0; i < m_n; ++i){
-			m_ha[i] = sin((i + 0.5) * PI / n);
+	FFT::FFT(){
+		int two_frame_size = 2 * FRAME_SIZE;
+		for (int i = 0; i < two_frame_size; ++i){
+			m_ha[i] = sinf(i * (float)PI / (two_frame_size - 1));
 		}
 	}
 	FFT::~FFT(){
 	
 	}
 
-	void FFT::compute(const std::vector<float>& input, std::vector<std::complex<float> >& output){
-		fftw_complex in[FRAME_SIZE];
-		fftw_complex out[FRAME_SIZE];
-		for (int i = 0; i < FRAME_SIZE; ++i){
-			in[i][0] = (double)input[i] * m_ha[i];
-			in[i][1] = 0.0;
+	void FFT::analyze(std::vector<float>& input, std::vector<std::complex<float> >& output){
+		int two_frame_size = 2 * FRAME_SIZE;
+		for (int i = 0; i < two_frame_size; ++i){
+			m_input[i] = input[i] * m_ha[i];
 		}
-		fftw_plan p;
-		p = fftw_plan_dft_1d(FRAME_SIZE, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
-		fftw_execute(p);
-		fftw_destroy_plan(p);
-		for (int i = 0; i < FRAME_SIZE; ++i){
-			output[i] = std::complex<float>((float)out[i][0], (float)out[i][1]);
+		fftwf_complex out[FRAME_SIZE + 1];
+		fftwf_plan p = fftwf_plan_dft_r2c_1d(two_frame_size, m_input, out, FFTW_ESTIMATE);
+		fftwf_execute(p);
+		fftwf_destroy_plan(p);
+		// only copy the first half.
+		for (int i = 0; i <= FRAME_SIZE; ++i){
+			output[i].real(out[i][0]);
+			output[i].imag(out[i][1]);
 		}
+	}
+
+	void FFT::synthesize(std::vector<std::complex<float> >& input, std::vector<float>& output){
+		fftwf_complex in[2 * FRAME_SIZE];
+		for (int i = 0; i <= FRAME_SIZE; ++i){
+			in[i][0] = input[i].real();
+			in[i][1] = input[i].imag();
+		}
+		fftwf_plan p = fftwf_plan_dft_c2r_1d(2 * FRAME_SIZE, in, &output[0], FFTW_ESTIMATE);
+		fftwf_execute(p);
+		fftwf_destroy_plan(p);
+		
+		memcpy(m_prev_output, &output[0], 2 * FRAME_SIZE * sizeof(float));
 	}
 }
 

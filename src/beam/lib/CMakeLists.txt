@@ -1,4 +1,6 @@
 SET(libbeam_sources
+	Beamformer.h Beamformer.cpp
+	Calibrator.h Calibrator.cpp
 	Coords.h
 	DSPFilter.h DSPFilter.cpp
 	FFT.h FFT.cpp

@@ -9,13 +9,20 @@ namespace Beam{
 	class FFT {
 	public:
 		/// constructor with the size.
-		FFT(int n);
+		FFT();
 		~FFT();
-		/// compute FFT.
-		void compute(const std::vector<float>& input, std::vector<std::complex<float> >& output);
+		/// compute FFT. make sure that output is allocated.
+		/// the input must have 2 * FRAME_SIZE.
+		/// the output must have FRAME_SIZE.
+		void analyze(std::vector<float>& input, std::vector<std::complex<float> >& output);
+		/// compute IFFT. make sure that output is allocated.
+		/// the input must have FRAME_SIZE.
+		/// the output must have 2 * FRAME_SIZE.
+		void synthesize(std::vector<std::complex<float> >& input, std::vector<float>& output);
 	private:
-		int m_n;
-		double m_ha[FRAME_SIZE];
+		float m_ha[FRAME_SIZE * 2];
+		float m_input[FRAME_SIZE * 2];
+		float m_prev_output[FRAME_SIZE * 2];
 	};
 }
 

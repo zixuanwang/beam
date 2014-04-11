@@ -5,6 +5,7 @@
 #include <list>
 #include <memory>
 #include "KinectConfig.h"
+#include "DSPFilter.h"
 
 namespace Beam{
 #define NUM_ANGLES 18
