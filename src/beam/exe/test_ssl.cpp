@@ -1,8 +1,6 @@
+#include "beam\lib\Utils.h"
+#include "beam\lib\Beamformer.h"
 #include <iostream>
-#include "beam\lib\FFT.h"
-#include "beam\lib\MCLT.h"
-#include "beam\lib\Microphone.h"
-#include "beam\lib\SoundSourceLocalizer.h"
 
 static float wr_15[15] = {  // cos(2*pi*(0:14)/15)
 	1.0f, 0.9135454576f, 0.6691306063f, 0.3090169943f, -0.1045284632f,
@@ -395,19 +393,202 @@ void AecCcsFwdFFT(
 	delete[] tempbuf;
 }
 
+typedef struct
+{
+	float re;
+	float im;
+} CompFloat;
+
+void AnsiBfMsrProcessQuadLoopFast(CompFloat* WO0, CompFloat* WO1, CompFloat* WO2, CompFloat* WO3,
+	CompFloat M0, CompFloat M1, CompFloat M2, CompFloat M3,
+	CompFloat W0, CompFloat W1, CompFloat W2, CompFloat W3,
+	float Nu, float Mu)
+{
+
+	/* Basic idea for this code:                                         */
+	/* 1) Pull out the current values for each microphone for this bin   */
+	/* 2) Find the complex outer product (x * transpose(conj(x)))        */
+	/* 3) Take NumMics by NumMics matrix and add mu to the diagonal      */
+	/* 4) Invert the matrix                                              */
+	/* 5) Multiply the orignal weights (complex transpose) by the matrix */
+	/* 6) Divide by (Orig complex transpose)*(inverted Matric)*(Orig)    */
+	/* 7) Finally weight the stored values back into the frequency bin   */
+	/* Create the denominator first. */
+	CompFloat WN0, WN1, WN2, WN3;       /* New weights.                    */
+	float den = 0;
+	float tmp = 0;
+
+	/* To understand the notation imagine the microphones are:       */
+	/* M0 = (A,B); M1 = (C,D); M2 = (E,F); M3 = (G,H)                */
+	/* Imagine the weights are:                                      */
+	/* W0 = (J,K); W1 = (L,M); W2 = (O,P); W3 = (Q,R)                */
+
+	/* This algorithm was found by writing an algebraic maniuplation */
+	/* program from scratch and then analyzing the output of the     */
+	/* program.  From this common terms are thrown out and the det   */
+	/* of the matrix is thrown away since the same det is on the top */
+	/* and the bottom.  Additionally all terms are biased by Nu*Nu   */
+	/* and so that factor is thrown out as well.                     */
+
+	/* First we will take care of the power component of the den and */
+	/* the weights times the diagonal to set-up the output weights.  */
+	float Out0 = Nu;
+	float Out1 = Nu;
+	float Out2 = Nu;
+	float Out3 = Nu;
+
+	tmp = M0.re*M0.re + M0.im*M0.im;
+	Out1 += tmp;
+	Out2 += tmp;
+	Out3 += tmp;
+	tmp = M1.re*M1.re + M1.im*M1.im;
+	Out0 += tmp;
+	Out2 += tmp;
+	Out3 += tmp;
+	tmp = M2.re*M2.re + M2.im*M2.im;
+	Out0 += tmp;
+	Out1 += tmp;
+	Out3 += tmp;
+	tmp = M3.re*M3.re + M3.im*M3.im;
+	Out0 += tmp;
+	Out1 += tmp;
+	Out2 += tmp;
+	/* Now place these in the denominator. */
+	den += Out0*(W0.re*W0.re + W0.im*W0.im);
+	den += Out1*(W1.re*W1.re + W1.im*W1.im);
+	den += Out2*(W2.re*W2.re + W2.im*W2.im);
+	den += Out3*(W3.re*W3.re + W3.im*W3.im);
+	/* Initialize the numberator outputs. */
+	/* Note the Weights is conjugated. */
+	WN0.re = Out0*W0.re;
+	WN0.im = -1 * Out0*W0.im;
+	WN1.re = Out1*W1.re;
+	WN1.im = -1 * Out1*W1.im;
+	WN2.re = Out2*W2.re;
+	WN2.im = -1 * Out2*W2.im;
+	WN3.re = Out3*W3.re;
+	WN3.im = -1 * Out3*W3.im;
+	/* Need to put in the mixed terms now. */
+	// AC & BD
+	tmp = -1 * M0.re*M1.re - M0.im*M1.im;
+	WN0.re += tmp*W1.re;
+	WN1.re += tmp*W0.re;
+	WN0.im -= tmp*W1.im;   /* Minus due to conjugation. */
+	WN1.im -= tmp*W0.im;   /* Minus due to conjugation. */
+	den += 2 * tmp*(W0.re*W1.re + W0.im*W1.im);
+	// BC & AD
+	tmp = M0.im*M1.re - M0.re*M1.im;
+	WN0.re += tmp*W1.im;   /* Plus due to conjugation. */
+	WN1.re -= tmp*W0.im;   /* Plus due to conjugation. Then negated for conjugate. */
+	WN0.im += tmp*W1.re;
+	WN1.im -= tmp*W0.re;   /* Negated for the conjugate in matrix. */
+	den += 2 * tmp*(W0.re*W1.im - W0.im*W1.re);
+	// BF & AE
+	tmp = -1 * M0.re*M2.re - M0.im*M2.im;
+	WN0.re += tmp*W2.re;
+	WN2.re += tmp*W0.re;
+	WN0.im -= tmp*W2.im;   /* Minus due to conjugation. */
+	WN2.im -= tmp*W0.im;   /* Minus due to conjugation. */
+	den += 2 * tmp*(W0.re*W2.re + W0.im*W2.im);
+	// BE & AF
+	tmp = M0.im*M2.re - M0.re*M2.im;
+	WN0.re += tmp*W2.im;   /* Plus due to conjugation. */
+	WN2.re -= tmp*W0.im;   /* Plus due to conjugation. Then negated for conjugate. */
+	WN0.im += tmp*W2.re;
+	WN2.im -= tmp*W0.re;   /* Negated for the conjugate in matrix. */
+	den += 2 * tmp*(W0.re*W2.im - W0.im*W2.re);
+	// BH & AG
+	tmp = -1 * M0.re*M3.re - M0.im*M3.im;
+	WN0.re += tmp*W3.re;
+	WN3.re += tmp*W0.re;
+	WN0.im -= tmp*W3.im;   /* Minus due to conjugation. */
+	WN3.im -= tmp*W0.im;   /* Minus due to conjugation. */
+	den += 2 * tmp*(W0.re*W3.re + W0.im*W3.im);
+	// BE & AF
+	tmp = M0.im*M3.re - M0.re*M3.im;
+	WN0.re += tmp*W3.im;   /* Plus due to conjugation. */
+	WN3.re -= tmp*W0.im;   /* Plus due to conjugation. Then negated for conjugate. */
+	WN0.im += tmp*W3.re;
+	WN3.im -= tmp*W0.re;   /* Negated for the conjugate in matrix. */
+	den += 2 * tmp*(W0.re*W3.im - W0.im*W3.re);
+	// DF & CE
+	tmp = -1 * M1.re*M2.re - M1.im*M2.im;
+	WN1.re += tmp*W2.re;
+	WN2.re += tmp*W1.re;
+	WN1.im -= tmp*W2.im;   /* Minus due to conjugation. */
+	WN2.im -= tmp*W1.im;   /* Minus due to conjugation. */
+	den += 2 * tmp*(W1.re*W2.re + W1.im*W2.im);
+	// DE & CF
+	tmp = M1.im*M2.re - M1.re*M2.im;
+	WN1.re += tmp*W2.im;   /* Plus due to conjugation. */
+	WN2.re -= tmp*W1.im;   /* Plus due to conjugation. Then negated for conjugate. */
+	WN1.im += tmp*W2.re;
+	WN2.im -= tmp*W1.re;   /* Negated for the conjugate in matrix. */
+	den += 2 * tmp*(W1.re*W2.im - W1.im*W2.re);
+	// CG & DH
+	tmp = -1 * M1.re*M3.re - M1.im*M3.im;
+	WN1.re += tmp*W3.re;
+	WN3.re += tmp*W1.re;
+	WN1.im -= tmp*W3.im;   /* Minus due to conjugation. */
+	WN3.im -= tmp*W1.im;   /* Minus due to conjugation. */
+	den += 2 * tmp*(W1.re*W3.re + W1.im*W3.im);
+	// CH & DG
+	tmp = M1.im*M3.re - M1.re*M3.im;
+	WN1.re += tmp*W3.im;   /* Plus due to conjugation. */
+	WN3.re -= tmp*W1.im;   /* Plus due to conjugation. Then negated for conjugate. */
+	WN1.im += tmp*W3.re;
+	WN3.im -= tmp*W1.re;   /* Negated for the conjugate in matrix. */
+	den += 2 * tmp*(W1.re*W3.im - W1.im*W3.re);
+	// EG & FH
+	tmp = -1 * M2.re*M3.re - M2.im*M3.im;
+	WN2.re += tmp*W3.re;
+	WN3.re += tmp*W2.re;
+	WN2.im -= tmp*W3.im;   /* Minus due to conjugation. */
+	WN3.im -= tmp*W2.im;   /* Minus due to conjugation. */
+	den += 2 * tmp*(W2.re*W3.re + W2.im*W3.im);
+	// EH & FG
+	tmp = M2.im*M3.re - M2.re*M3.im;
+	WN2.re += tmp*W3.im;   /* Plus due to conjugation. */
+	WN3.re -= tmp*W2.im;   /* Plus due to conjugation. Then negated for conjugate. */
+	WN2.im += tmp*W3.re;
+	WN3.im -= tmp*W2.re;   /* Negated for the conjugate in matrix. */
+	den += 2 * tmp*(W2.re*W3.im - W2.im*W3.re);
+
+
+	/* Now divide by the denominator. */
+	WN0.re /= den;
+	WN0.im /= den;
+	WN1.re /= den;
+	WN1.im /= den;
+	WN2.re /= den;
+	WN2.im /= den;
+	WN3.re /= den;
+	WN3.im /= den;
+
+	/* So now we have the new weights so now adjust the weights for the beamformer. */
+	WO0->re = (1 - Mu)*(WO0->re) + Mu*WN0.re;
+	WO0->im = (1 - Mu)*(WO0->im) + Mu*WN0.im;
+	WO1->re = (1 - Mu)*(WO1->re) + Mu*WN1.re;
+	WO1->im = (1 - Mu)*(WO1->im) + Mu*WN1.im;
+	WO2->re = (1 - Mu)*(WO2->re) + Mu*WN2.re;
+	WO2->im = (1 - Mu)*(WO2->im) + Mu*WN2.im;
+	WO3->re = (1 - Mu)*(WO3->re) + Mu*WN3.re;
+	WO3->im = (1 - Mu)*(WO3->im) + Mu*WN3.im;
+}
+
 
 int main(int argc, char* argv[]){
-	float in[8] = { 1, 4, 3, 6, 4, 3, 2, 1 };
-	fftwf_complex out[5];
-	//fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex)*4);
-	fftwf_plan p;
-	//p = fftw_plan_dft_1d(4, out, out, FFTW_FORWARD, FFTW_ESTIMATE);
-	p = fftwf_plan_dft_r2c_1d(8, in, out, FFTW_ESTIMATE);
-	fftwf_execute(p);
-	fftwf_destroy_plan(p);
-	for (int i = 0; i < 4; ++i){
-		std::cout << out[i][0] << "\t" << out[i][1] << std::endl;
-	}
+	//float in[8] = { 1, 4, 3, 6, 4, 3, 2, 1 };
+	//fftwf_complex out[5];
+	////fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex)*4);
+	//fftwf_plan p;
+	////p = fftw_plan_dft_1d(4, out, out, FFTW_FORWARD, FFTW_ESTIMATE);
+	//p = fftwf_plan_dft_r2c_1d(8, in, out, FFTW_ESTIMATE);
+	//fftwf_execute(p);
+	//fftwf_destroy_plan(p);
+	//for (int i = 0; i < 4; ++i){
+	//	std::cout << out[i][0] << "\t" << out[i][1] << std::endl;
+	//}
 	//fftwf_complex in[4];
 	//float output[4];
 	//in[0][0] = 10;
@@ -426,5 +607,38 @@ int main(int argc, char* argv[]){
 	//float in[8] = { 1.f, 2.f, 3.f, 4.f, 3.f, 0.f, 9.f, 1.f};
 	//float out[10];
 	//AecCcsFwdFFT(in, out, 8);
+	CompFloat WO0{ 0.f, 0.f };
+	CompFloat WO1{ 0.f, 0.f };
+	CompFloat WO2{ 0.f, 0.f };
+	CompFloat WO3{ 0.f, 0.f };
+	CompFloat M0{ 1.f, 1.f };
+	CompFloat M1{ 2.f, 4.f };
+	CompFloat M2{ 4.f, 1.5f };
+	CompFloat M3{ 0.f, 3.f };
+	CompFloat W0{ 0.5f, 1.f };
+	CompFloat W1{ 0.3f, 4.f };
+	CompFloat W2{ 1.f, 1.5f };
+	CompFloat W3{ 2.f, 4.f };
+	AnsiBfMsrProcessQuadLoopFast(&WO0, &WO1, &WO2, &WO3,
+		M0, M1, M2, M3,
+		W0, W1, W2, W3,
+		0.0000010f, 0.0080000f);
+	std::complex<float> _WO0{ 0.f, 0.f };
+	std::complex<float> _WO1{ 0.f, 0.f };
+	std::complex<float> _WO2{ 0.f, 0.f };
+	std::complex<float> _WO3{ 0.f, 0.f };
+	std::complex<float> _M0{ 1.f, 1.f };
+	std::complex<float> _M1{ 2.f, 4.f };
+	std::complex<float> _M2{ 4.f, 1.5f };
+	std::complex<float> _M3{ 0.f, 3.f };
+	std::complex<float> _W0{ 0.5f, 1.f };
+	std::complex<float> _W1{ 0.3f, 4.f };
+	std::complex<float> _W2{ 1.f, 1.5f };
+	std::complex<float> _W3{ 2.f, 4.f };
+	Beam::Beamformer bf;
+	bf.ansi_bf_msr_process_quad_loop_fast(&_WO0, &_WO1, &_WO2, &_WO3,
+		_M0, _M1, _M2, _M3,
+		_W0, _W1, _W2, _W3,
+		0.0000010f, 0.0080000f);
 	return 0;
 }

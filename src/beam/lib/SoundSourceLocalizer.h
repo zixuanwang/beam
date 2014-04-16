@@ -17,6 +17,9 @@ namespace Beam{
 #define	SSL_MEASUREMENT_LIFETIME 2.5
 #define SSL_CONTRAST_THRESHOLD 0.2716f
 #define	SSL_BEAMCHANGE_CONFIDENCE_THRESHOLD 0.431948f
+#define SSL_RELATIVE_ENERGY_THRESHOLD 5.290792f
+#define SSL_ABSOLUTE_ENERGY_THRESHOLD 82.305741f
+
 	class SoundSourceLocalizer {
 	public:
 		SoundSourceLocalizer();

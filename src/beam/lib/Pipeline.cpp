@@ -10,8 +10,8 @@ namespace Beam{
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			m_ssl_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 10.f);
 			m_pre_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
-			m_out_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
 		}
+		m_out_noise_suppressor.init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
 		m_ssl.init(SAMPLE_RATE, FRAME_SIZE);
 		// initialize persistent and dynamic gains
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
@@ -30,6 +30,8 @@ namespace Beam{
 		m_confidence = 0.f;
 		// initialize m_time.
 		m_time = 0.0;
+		// initialize m_angle.
+		m_angle = 0.f;
 	}
 
 	Pipeline* Pipeline::instance(){
@@ -49,7 +51,7 @@ namespace Beam{
 		m_time += (double)FRAME_SIZE / (double)SAMPLE_RATE;
 	}
 
-	bool Pipeline::source_localize(std::vector<std::complex<float> >* input, double time, float* p_angle){
+	bool Pipeline::source_localize(std::vector<std::complex<float> >* input, float* p_angle){
 		//  Apply the SSL band pass filter to the input channels
 		//  and have a separate copy of the input channels 
 		//  for SSL purposes only
@@ -67,8 +69,8 @@ namespace Beam{
 			energy += (double)Utils::computeRMS(input[channel]);
 		}
 		energy /= MAX_MICROPHONES;
-		double floor = m_noise_floor.nextLevel(time, energy);
-		if (energy > 5.290792 * floor){	// TODO: modify this threshold
+		double floor = m_noise_floor.nextLevel(m_time, energy);
+		if (energy > SSL_RELATIVE_ENERGY_THRESHOLD * floor && energy > SSL_ABSOLUTE_ENERGY_THRESHOLD){
 			// sound signal
 			float angle;
 			float weight;
@@ -76,10 +78,10 @@ namespace Beam{
 			int valid;
 			int num;
 			m_ssl.process(input, &angle, &weight);
-			std::cout << "weight: " << weight << std::endl;
-			if (weight > 5e-6f){ // TODO: modify this threshold
-				m_ssl.process_next_sample(time, angle, weight);
-				m_ssl.get_average(time, p_angle, &m_confidence, &std_dev, &num, &valid);
+			if (weight > SSL_CONTRAST_THRESHOLD){
+				m_ssl.process_next_sample(m_time, angle, weight);
+				m_ssl.get_average(m_time, p_angle, &m_confidence, &std_dev, &num, &valid);
+				m_angle = *p_angle;
 				return true;
 			}
 		}
@@ -97,20 +99,21 @@ namespace Beam{
 	}
 
 	void Pipeline::beamforming(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output){
-		m_beamformer.compute(input, output, m_time);
+		m_beamformer.compute(input, output, m_angle, m_time);
 	}
 
-	void Pipeline::postprocessing(std::vector<std::complex<float> >* input){
-		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-			m_out_noise_suppressor[channel].frequency_shifting(input[channel]);
-		}
+	void Pipeline::postprocessing(std::vector<std::complex<float> >& input){
+		m_out_noise_suppressor.frequency_shifting(input);
 	}
 
 	void Pipeline::expand_gain(){
 		std::complex<float> zero(0.f, 0.f);
 		// use MCLT
 		float freq_step = (float)SAMPLE_RATE / FRAME_SIZE / 2.f;
-		float freq_beg = freq_step / 2.f;
+		float freq_beg = 0.f;
+		if (USE_MCLT){
+			freq_beg = freq_step / 2.f;
+		}
 		for (int index = 0; index < FRAME_SIZE; ++index){
 			int interp_high = 1;
 			int interp_low = 0;

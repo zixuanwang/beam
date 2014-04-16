@@ -108,7 +108,7 @@ namespace Beam{
 
 	void DSPFilter::band_pass_fft(std::vector<std::complex<float> >& spectrum, float low_stop_freq, float low_pass_freq, float high_pass_freq, float high_stop_freq){
 		spectrum.assign(FRAME_SIZE, std::complex<float>(1.f, 0.f));
-		low_pass_mclt(spectrum, high_pass_freq, high_stop_freq);
-		high_pass_mclt(spectrum, low_pass_freq, low_stop_freq);
+		low_pass_fft(spectrum, high_pass_freq, high_stop_freq);
+		high_pass_fft(spectrum, low_pass_freq, low_stop_freq);
 	}
 }

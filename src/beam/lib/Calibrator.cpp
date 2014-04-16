@@ -75,7 +75,7 @@ namespace Beam{
 				}
 				float re = persistent_gains[channel][sub].real();
 				float im = persistent_gains[channel][sub].imag();
-				persistent_gains[channel][sub] = std::complex<float>(re + weight * (est_gains[channel] - re), im);
+				persistent_gains[channel][sub].real(re + weight * (est_gains[channel] - re));
 			}
 		}
 		return sigma;
