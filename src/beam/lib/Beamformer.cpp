@@ -210,70 +210,98 @@ namespace Beam{
 		den += out1 * std::norm(w1);
 		den += out2 * std::norm(w2);
 		den += out3 * std::norm(w3);
-		wn0 = std::complex<float>(out0 * w0.real(), -1.f * out0 * w0.imag());
-		wn1 = std::complex<float>(out1 * w1.real(), -1.f * out1 * w1.imag());
-		wn2 = std::complex<float>(out2 * w2.real(), -1.f * out2 * w2.imag());
-		wn3 = std::complex<float>(out3 * w3.real(), -1.f * out3 * w3.imag());
+		wn0.real(out0 * w0.real());
+		wn0.imag(-1.f * out0 * w0.imag());
+		wn1.real(out1 * w1.real());
+		wn1.imag(-1.f * out1 * w1.imag());
+		wn2.real(out2 * w2.real());
+		wn2.imag(-1.f * out2 * w2.imag());
+		wn3.real(out3 * w3.real());
+		wn3.imag(-1.f * out3 * w3.imag());
 		/* Need to put in the mixed terms now. */
 		// AC & BD
 		tmp = -1.f * m0.real() * m1.real() - m0.imag() * m1.imag();
-		wn0 += std::complex<float>(tmp * w1.real(), -tmp * w1.imag());
-		wn1 += std::complex<float>(tmp * w0.real(), -tmp * w0.imag());
+		wn0.real(wn0.real() + tmp * w1.real());
+		wn1.real(wn1.real() + tmp * w0.real());
+		wn0.imag(wn0.imag() - tmp * w1.imag());
+		wn1.imag(wn1.imag() - tmp * w0.imag());
 		den += 2.f * tmp * (w0.real() * w1.real() + w0.imag() * w1.imag());
 		// BC & AD
 		tmp = m0.imag() * m1.real() - m0.real() * m1.imag();
-		wn0 += std::complex<float>(tmp * w1.imag(), tmp * w1.real());
-		wn1 -= std::complex<float>(tmp * w0.imag(), tmp * w0.real());
+		wn0.real(wn0.real() + tmp * w1.imag());
+		wn1.real(wn1.real() - tmp * w0.imag());
+		wn0.imag(wn0.imag() + tmp * w1.real());
+		wn1.imag(wn1.imag() - tmp * w0.real());
 		den += 2.f * tmp * (w0.real() * w1.imag() - w0.imag() * w1.real());
 		// BF & AE
 		tmp = -1.f * m0.real() * m2.real() - m0.imag() * m2.imag();
-		wn0 += std::complex<float>(tmp * w2.real(), -tmp * w2.imag());
-		wn2 += std::complex<float>(tmp * w0.real(), -tmp * w0.imag());
+		wn0.real(wn0.real() + tmp * w2.real());
+		wn2.real(wn2.real() + tmp * w0.real());
+		wn0.imag(wn0.imag() - tmp * w2.imag());
+		wn2.imag(wn2.imag() - tmp * w0.imag());
 		den += 2.f * tmp * (w0.real() * w2.real() + w0.imag() * w2.imag());
 		// BE & AF
 		tmp = m0.imag() * m2.real() - m0.real() * m2.imag();
-		wn0 += std::complex<float>(tmp * w2.imag(), tmp * w2.real());
-		wn2 -= std::complex<float>(tmp * w0.imag(), tmp * w0.real());
+		wn0.real(wn0.real() + tmp * w2.imag());
+		wn2.real(wn2.real() - tmp * w0.imag());
+		wn0.imag(wn0.imag() + tmp * w2.real());
+		wn2.imag(wn2.imag() - tmp * w0.real());
 		den += 2.f * tmp * (w0.real() * w2.imag() - w0.imag() * w2.real());
 		// BH & AG
 		tmp = -1.f * m0.real() * m3.real() - m0.imag() * m3.imag();
-		wn0 += std::complex<float>(tmp * w3.real(), -tmp * w3.imag());
-		wn3 += std::complex<float>(tmp * w0.real(), -tmp * w0.imag());
+		wn0.real(wn0.real() + tmp * w3.real());
+		wn3.real(wn3.real() + tmp * w0.real());
+		wn0.imag(wn0.imag() - tmp * w3.imag());
+		wn3.imag(wn3.imag() - tmp * w0.imag());
 		den += 2.f * tmp * (w0.real() * w3.real() + w0.imag() * w3.imag());
 		// BG & AH
 		tmp = m0.imag() * m3.real() - m0.real() * m3.imag();
-		wn0 += std::complex<float>(tmp * w3.imag(), tmp * w3.real());
-		wn3 -= std::complex<float>(tmp * w0.imag(), tmp * w0.real());
+		wn0.real(wn0.real() + tmp * w3.imag());
+		wn3.real(wn3.real() - tmp * w0.imag());
+		wn0.imag(wn0.imag() + tmp * w3.real());
+		wn3.imag(wn3.imag() - tmp * w0.real());
 		den += 2.f * tmp * (w0.real() * w3.imag() - w0.imag() * w3.real());
 		// DF & CE
 		tmp = -1.f * m1.real() * m2.real() - m1.imag() * m2.imag();
-		wn1 += std::complex<float>(tmp * w2.real(), -tmp * w2.imag());
-		wn2 += std::complex<float>(tmp * w1.real(), -tmp * w1.imag());
+		wn1.real(wn1.real() + tmp * w2.real());
+		wn2.real(wn2.real() + tmp * w1.real());
+		wn1.imag(wn1.imag() - tmp * w2.imag());
+		wn2.imag(wn2.imag() - tmp * w1.imag());
 		den += 2.f * tmp * (w1.real() * w2.real() + w1.imag() * w2.imag());
 		// DE & CF
 		tmp = m1.imag() * m2.real() - m1.real() * m2.imag();
-		wn1 += std::complex<float>(tmp * w2.imag(), tmp * w2.real());
-		wn2 -= std::complex<float>(tmp * w1.imag(), tmp * w1.real());
+		wn1.real(wn1.real() + tmp * w2.imag());
+		wn2.real(wn2.real() - tmp * w1.imag());
+		wn1.imag(wn1.imag() + tmp * w2.real());
+		wn2.imag(wn2.imag() - tmp * w1.real());
 		den += 2.f * tmp * (w1.real() * w2.imag() - w1.imag() * w2.real());
 		// CG & DH
 		tmp = -1.f * m1.real() * m3.real() - m1.imag() * m3.imag();
-		wn1 += std::complex<float>(tmp * w3.real(), -tmp * w3.imag());
-		wn3 += std::complex<float>(tmp * w1.real(), -tmp * w1.imag());
+		wn1.real(wn1.real() + tmp * w3.real());
+		wn3.real(wn3.real() + tmp * w1.real());
+		wn1.imag(wn1.imag() - tmp * w3.imag());
+		wn3.imag(wn3.imag() - tmp * w1.imag());
 		den += 2.f * tmp * (w1.real() * w3.real() + w1.imag() * w3.imag());
 		// CH & DG
 		tmp = m1.imag() * m3.real() - m1.real() * m3.imag();
-		wn1 += std::complex<float>(tmp * w3.imag(), tmp * w3.real());
-		wn3 -= std::complex<float>(tmp * w1.imag(), tmp * w1.real());
+		wn1.real(wn1.real() + tmp * w3.imag());
+		wn3.real(wn3.real() - tmp * w1.imag());
+		wn1.imag(wn1.imag() + tmp * w3.real());
+		wn3.imag(wn3.imag() - tmp * w1.real());
 		den += 2.f * tmp * (w1.real() * w3.imag() - w1.imag() * w3.real());
 		// EG & FH
 		tmp = -1.f * m2.real() * m3.real() - m2.imag() * m3.imag();
-		wn2 += std::complex<float>(tmp * w3.real(), -tmp * w3.imag());
-		wn3 += std::complex<float>(tmp * w2.real(), -tmp * w2.imag());
-		den += 2.f * tmp * (w2.real() * w3.real() + w2.imag() * w3.real());
+		wn2.real(wn2.real() + tmp * w3.real());
+		wn3.real(wn3.real() + tmp * w2.real());
+		wn2.imag(wn2.imag() - tmp * w3.imag());
+		wn3.imag(wn3.imag() - tmp * w2.imag());
+		den += 2.f * tmp * (w2.real() * w3.real() + w2.imag() * w3.imag());
 		// EH & FG
 		tmp = m2.imag() * m3.real() - m2.real() * m3.imag();
-		wn2 += std::complex<float>(tmp * w3.imag(), tmp * w3.real());
-		wn3 -= std::complex<float>(tmp * w2.imag(), tmp * w2.real());
+		wn2.real(wn2.real() + tmp * w3.imag());
+		wn3.real(wn3.real() - tmp * w2.imag());
+		wn2.imag(wn2.imag() + tmp * w3.real());
+		wn3.imag(wn3.imag() - tmp * w2.real());
 		den += 2.f * tmp * (w2.real() * w3.imag() - w2.imag() * w3.real());
 		/* Now divide by the denominator. */
 		wn0 /= den;
