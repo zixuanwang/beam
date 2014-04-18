@@ -10,6 +10,7 @@
 #include "NoiseSuppressor.h"
 #include "SoundSourceLocalizer.h"
 #include "Tracker.h"
+#include "WavWriter.h"
 
 namespace Beam{
 	class Pipeline{

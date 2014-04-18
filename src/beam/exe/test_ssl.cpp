@@ -1,5 +1,6 @@
-#include "beam\lib\Utils.h"
 #include "beam\lib\Beamformer.h"
+#include "beam\lib\FFT.h"
+#include "beam\lib\Utils.h"
 #include <iostream>
 
 static float wr_15[15] = {  // cos(2*pi*(0:14)/15)
@@ -408,11 +409,11 @@ int main(int argc, char* argv[]){
 	//}
 	//fftwf_complex in[4];
 	//float output[4];
-	//in[0][0] = 10;
+	//in[0][0] = 0;
 	//in[0][1] = 0;
-	//in[1][0] = -2;
-	//in[1][1] = 2;
-	//in[2][0] = -2;
+	//in[1][0] = 0;
+	//in[1][1] = 0;
+	//in[2][0] = 0;
 	//in[2][1] = 0;
 	//fftwf_plan p; 
 	//p = fftwf_plan_dft_c2r_1d(4, in, output, FFTW_ESTIMATE);
@@ -421,8 +422,11 @@ int main(int argc, char* argv[]){
 	//for (int i = 0; i < 4; ++i){
 	//	std::cout << output[i] << std::endl;
 	//}
-	//float in[8] = { 1.f, 2.f, 3.f, 4.f, 3.f, 0.f, 9.f, 1.f};
-	//float out[10];
-	//AecCcsFwdFFT(in, out, 8);
+	Beam::FFT fft;
+	float in[8] = { 6.f, 0.f, 3.f, 4.f, 3.f, 0.f, 9.f, 1.f};
+	float out[8];
+	fft.AecCcsFwdFFT(in, out, 8);
+	float in2[8] = { 0.f };
+	fft.AecCcsInvFFT(out, in2, 8);
 	return 0;
 }

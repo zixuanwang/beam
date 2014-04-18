@@ -85,6 +85,7 @@ namespace Beam{
 				return true;
 			}
 		}
+		*p_angle = m_angle;
 		return false;
 	}
 
