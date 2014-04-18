@@ -94,7 +94,7 @@ namespace Beam{
 			}
 		}
 		//  big difference - switch the beam instantly
-		if (abs(m_beam - beam) > 1){
+		if (std::abs(m_beam - beam) > 1){
 			m_beam = beam;
 		}
 		else{

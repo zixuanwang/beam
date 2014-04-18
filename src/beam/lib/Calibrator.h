@@ -1,6 +1,7 @@
 #ifndef CALIBRATOR_H_
 #define CALIBRATOR_H_
 
+#include <cfloat>
 #include "DSPFilter.h"
 #include "KinectConfig.h"
 

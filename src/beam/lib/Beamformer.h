@@ -1,6 +1,7 @@
 #ifndef BEAMFORMER_H_
 #define BEAMFORMER_H_
 
+#include <cfloat>
 #include "KinectConfig.h"
 
 namespace Beam{

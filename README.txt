@@ -1,12 +1,12 @@
 ******************************************************************************
-*   Geometric VLAD
+*   Beamformer
 ******************************************************************************
-*   by Zixuan Wang, 14th September 2013
-*   http://www.stanford.edu/~zxwang
+*   by Daniel Wang, 14th April 2014
 ******************************************************************************
 
 ******************************************************************************
-*   Before compiling, make sure you have installed boost, cmake and opencv
+*   Before compiling, make sure you have installed cmake and the compiler
+*   supports c++11.
 ******************************************************************************
 
 ----------------------------------------------------------
@@ -21,8 +21,8 @@ Linux:
 Windows (MS Visual Studio):
     mkdir build
     cd build
-    cmake -G "Visual Studio 11 Win64" -DCMAKE_PREFIX_PATH=c:/lib ../src
-    start gvlad.sln 
+    cmake -G "Visual Studio 12 Win64" ../src
+    start beam.sln 
     
 - A static library will be written to the "lib" directory.
 - The execuables can be found in the "bin" directory.
@@ -33,9 +33,3 @@ Help will be shown when you run each program without argument
 ----------------------------------------------------------
 * On Linux or Mac:	./bin/program_name
 * On Windows:		bin\Debug\program_name
-
-----------------------------------------------------------
-Example to use provided executables:
-----------------------------------------------------------
-
-

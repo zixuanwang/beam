@@ -1,7 +1,7 @@
 #ifndef FFT_H_
 #define FFT_H_
 
-#include "fftw3.h"
+#include <string.h>
 #include "GlobalConfig.h"
 #include "Utils.h"
 

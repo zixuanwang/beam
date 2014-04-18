@@ -24,37 +24,35 @@ namespace Beam{
 	}
 
 	void FFT::analyze(std::vector<float>& input, std::vector<std::complex<float> >& output){
-		int two_frame_size = 2 * FRAME_SIZE;
+		const int two_frame_size = 2 * FRAME_SIZE;
+		float out[two_frame_size];
 		for (int i = 0; i < two_frame_size; ++i){
 			m_input[i] = input[i] * m_ha[i];
 		}
-		fftwf_complex out[FRAME_SIZE + 1];
-		fftwf_plan p = fftwf_plan_dft_r2c_1d(two_frame_size, m_input, out, FFTW_ESTIMATE);
-		fftwf_execute(p);
-		fftwf_destroy_plan(p);
-		// only copy the first half.
+		AecCcsFwdFFT(m_input, out, (unsigned int)two_frame_size);
+		// only copy the first half
 		for (int i = 0; i < FRAME_SIZE; ++i){
-			output[i].real(out[i][0]);
-			output[i].imag(out[i][1]);
+			output[i].real(out[i]);
 		}
+		for (int i = FRAME_SIZE + 1; i < two_frame_size; ++i){
+			output[two_frame_size - i].imag(out[i]);
+		}
+		output[0].imag(0.f);
 	}
 
 	void FFT::synthesize(std::vector<std::complex<float> >& input, std::vector<float>& output){
-		fftwf_complex in[2 * FRAME_SIZE];
+		const int two_frame_size = 2 * FRAME_SIZE;
+		float in[two_frame_size] = { 0.f };
 		for (int i = 0; i < FRAME_SIZE; ++i){
-			in[i][0] = input[i].real();
-			in[i][1] = input[i].imag();
+			in[i] = input[i].real();
 		}
-		in[FRAME_SIZE][0] = 0.f;
-		in[FRAME_SIZE][1] = 0.f;
-		fftwf_plan p = fftwf_plan_dft_c2r_1d(2 * FRAME_SIZE, in, m_current, FFTW_ESTIMATE);
-		fftwf_execute(p);
-		fftwf_destroy_plan(p);
-		int two_frame_size = 2 * FRAME_SIZE;
+		for (int i = FRAME_SIZE + 1; i < two_frame_size; ++i){
+			in[i] = input[two_frame_size - i].imag();
+		}
+		AecCcsInvFFT(in, m_current, (unsigned int)two_frame_size);
 		for (int i = 0; i < two_frame_size; ++i){
 			m_current[i] /= (float)two_frame_size;
 		}
-
 		for (int i = 0; i < two_frame_size; ++i){
 			m_current[i] *= m_ha[i];
 		}
@@ -163,7 +161,7 @@ namespace Beam{
 		float * cos_tab, *x;
 
 		if (xin != xout) {
-			memcpy_s(xout, FFTSize*sizeof(float), xin, FFTSize*sizeof(float));
+			memcpy(xout, xin, FFTSize*sizeof(float));
 		}
 		x = xout;
 
@@ -561,7 +559,7 @@ namespace Beam{
 		cos_tab = sin_tab + FFTSize / 4;
 		if (xin != xout)
 		{
-			memcpy_s(xout, FFTSize*sizeof(float), xin, FFTSize*sizeof(float));
+			memcpy(xout, xin, FFTSize*sizeof(float));
 		}
 		x = xout;
 
