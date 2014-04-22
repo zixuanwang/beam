@@ -14,6 +14,7 @@ SET(libbeam_sources
 	SoundSourceLocalizer.h SoundSourceLocalizer.cpp
 	Tracker.h Tracker.cpp
 	Utils.h
+	WavReader.h WavReader.cpp
 	WavWriter.h WavWriter.cpp
 )
 ADD_LIBRARY(libbeam ${libbeam_sources})
