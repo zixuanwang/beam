@@ -9,7 +9,7 @@ namespace Beam{
 		m_in_stream.seekg(40, m_in_stream.beg);
 		m_in_stream.read((char*)&m_size, sizeof(m_size));
 		m_in_stream.seekg(0, m_in_stream.end);
-		int length = m_in_stream.tellg();
+		int length = (int)m_in_stream.tellg();
 		length -= 44;
 		m_size = m_size < length ? m_size : length;
 		m_in_stream.seekg(44, m_in_stream.beg);

@@ -19,10 +19,9 @@ namespace Beam{
 		static Pipeline* instance();
 		// multi-channel inputs.
 		void preprocess(std::vector<std::complex<float> >* input);
-		// if the sound source can be localized, true is returned and angle is store in p_angle.
-		// otherwise, false is returned.
-		bool source_localize(std::vector<std::complex<float> >* input, float* p_angle);
-		float smart_calibration(float sound_source, std::vector<std::complex<float> >* input);
+		// if the sound source can be localized, the angle is store in p_angle.
+		void source_localize(std::vector<std::complex<float> >* input, float* p_angle);
+		void smart_calibration();
 		void beamforming(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output);
 		void postprocessing(std::vector<std::complex<float> >& input);
 		void expand_gain();
@@ -43,9 +42,11 @@ namespace Beam{
 		Beamformer m_beamformer; // BF
 		float m_confidence;
 		float m_angle; // sound source angle
+		bool m_source_found;
 		// gains.
 		std::vector<std::complex<float> > m_dynamic_gains[MAX_MICROPHONES];
 		std::complex<float> m_persistent_gains[MAX_MICROPHONES][MAX_GAIN_SUBBANDS];
+		std::vector<std::complex<float> > m_input_channels[MAX_MICROPHONES];
 		int m_refresh_gain;
 		// timer. every time preprocess is called, the time is updated.
 		double m_time;

@@ -555,7 +555,7 @@ namespace Beam{
 		}
 		unsigned int base, step, N_base;
 		unsigned int i, j, k;   // loop indices
-		float * cos_tab, *x, *pfTemp;
+		float * cos_tab, *x;
 		cos_tab = sin_tab + FFTSize / 4;
 		if (xin != xout)
 		{

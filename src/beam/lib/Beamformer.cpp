@@ -41,7 +41,8 @@ namespace Beam{
 				// special case 1.  Frequency is less than dFreq_Lo --- set value to 0
 				if (freq <= KinectConfig::kinect_descriptor.freq_low){
 					for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-						m_pcm_weights[beam][channel][bin] = zero;
+						m_pcm_weights[beam][channel][bin].real(0.f);
+						m_pcm_weights[beam][channel][bin].imag(0.f);
 					}
 				}
 				// Special Case 2 - interpolate between 0 and freqency
@@ -78,56 +79,63 @@ namespace Beam{
 		}
 	}
 
-	void Beamformer::compute(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, float angle, double time){
+	void Beamformer::compute(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, float angle, float confidence, double time){
 		//  we have sound source detected - single beam mode
 		// find the best beam
-		float min_dist = FLT_MAX;
-		int beam = 0;
-		for (int index = 0; index < MAX_BEAMS; ++index){
-			float dist = KinectConfig::kinect_beams[index].fi - angle;
-			while (dist >(float)PI) dist -= (float)TWO_PI;
-			while (dist <= (float)-PI) dist += (float)TWO_PI;
-			dist = fabs(dist);
-			if (dist < min_dist){
-				min_dist = dist;
-				beam = index;
-			}
-		}
-		//  big difference - switch the beam instantly
-		if (std::abs(m_beam - beam) > 1){
-			m_beam = beam;
-		}
-		else{
-			//  neighbor beams - switch only if two thirds of the way
-			float dist = fabs(KinectConfig::kinect_beams[m_beam].fi - angle);
-			if (beam == 0){
-				if (dist > 0.66f * (KinectConfig::kinect_beams[beam + 1].fi - KinectConfig::kinect_beams[beam].fi)){
-					m_beam = beam;
+		if (confidence > SSL_BEAMCHANGE_CONFIDENCE_THRESHOLD){
+			float min_dist = FLT_MAX;
+			int beam = 0;
+			for (int index = 0; index < MAX_BEAMS; ++index){
+				float dist = KinectConfig::kinect_beams[index].fi - angle;
+				while (dist >(float)PI) dist -= (float)TWO_PI;
+				while (dist <= (float)-PI) dist += (float)TWO_PI;
+				dist = fabs(dist);
+				if (dist < min_dist){
+					min_dist = dist;
+					beam = index;
 				}
 			}
-			else if (beam == MAX_BEAMS - 1){
-				if (dist > 0.66f * (KinectConfig::kinect_beams[beam].fi - KinectConfig::kinect_beams[beam - 1].fi)){
-					m_beam = beam;
-				}
+			//  big difference - switch the beam instantly
+			if (std::abs(m_beam - beam) > 1){
+				m_beam = beam;
 			}
 			else{
-				if (dist > 0.66f * (KinectConfig::kinect_beams[beam + 1].fi - KinectConfig::kinect_beams[beam].fi) || dist > 0.66f * (KinectConfig::kinect_beams[beam].fi - KinectConfig::kinect_beams[beam - 1].fi)){
-					m_beam = beam;
+				//  neighbor beams - switch only if two thirds of the way
+				float dist = fabs(KinectConfig::kinect_beams[m_beam].fi - angle);
+				if (beam == 0){
+					if (dist > 0.66f * (KinectConfig::kinect_beams[beam + 1].fi - KinectConfig::kinect_beams[beam].fi)){
+						m_beam = beam;
+					}
+				}
+				else if (beam == MAX_BEAMS - 1){
+					if (dist > 0.66f * (KinectConfig::kinect_beams[beam].fi - KinectConfig::kinect_beams[beam - 1].fi)){
+						m_beam = beam;
+					}
+				}
+				else{
+					if (dist > 0.66f * (KinectConfig::kinect_beams[beam + 1].fi - KinectConfig::kinect_beams[beam].fi) || dist > 0.66f * (KinectConfig::kinect_beams[beam].fi - KinectConfig::kinect_beams[beam - 1].fi)){
+						m_beam = beam;
+					}
 				}
 			}
 		}
 		for (int bin = 0; bin < m_first_bin; ++bin){
-			output[bin] = std::complex<float>(0.f, 0.f);
+			output[bin].real(0.f);
+			output[bin].imag(0.f);
 		}
 		for (int bin = m_first_bin; bin < m_last_bin; ++bin){
-			output[bin] = std::complex<float>(0.f, 0.f);
+			output[bin].real(0.f);
+			output[bin].imag(0.f);
 			for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 				output[bin] += m_pcm_weights[m_beam][channel][bin] * input[channel][bin];
 			}
 		}
 		for (int bin = m_last_bin; bin < FRAME_SIZE; ++bin){
-			output[bin] = std::complex<float>(0.f, 0.f);
+			output[bin].real(0.f);
+			output[bin].imag(0.f);
 		}
+		// adaptive beam
+		/*
 		int beg_bin = 6;
 		int end_bin = 225;
 		for (int bin = beg_bin; bin < end_bin; ++bin){
@@ -156,6 +164,7 @@ namespace Beam{
 			m_pcm_weights[m_beam][2][bin] = wo2;
 			m_pcm_weights[m_beam][3][bin] = wo3;
 		}
+		*/
 	}
 
 	void Beamformer::ansi_bf_msr_process_quad_loop_fast(std::complex<float>* wo0, std::complex<float>* wo1, std::complex<float>* wo2, std::complex<float>* wo3, std::complex<float>& m0, std::complex<float>& m1, std::complex<float>& m2, std::complex<float>& m3, std::complex<float>& w0, std::complex<float>& w1, std::complex<float>& w2, std::complex<float>& w3, float nu, float mu){

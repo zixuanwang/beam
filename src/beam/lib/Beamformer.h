@@ -3,6 +3,7 @@
 
 #include <cfloat>
 #include "KinectConfig.h"
+#include "SoundSourceLocalizer.h"
 
 namespace Beam{
 #define F2RAISED23_INV (1.0f/8388608.0f)
@@ -11,7 +12,7 @@ namespace Beam{
 		Beamformer();
 		~Beamformer();
 		void init();
-		void compute(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, float angle, double time);
+		void compute(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, float angle, float confidence, double time);
 		void ansi_bf_msr_process_quad_loop_fast(std::complex<float>* wo0, std::complex<float>* wo1, std::complex<float>* wo2, std::complex<float>* wo3, std::complex<float>& m0, std::complex<float>& m1, std::complex<float>& m2, std::complex<float>& m3, std::complex<float>& w0, std::complex<float>& w1, std::complex<float>& w2, std::complex<float>& w3, float nu, float mu);
 	private:
 		int m_beam;

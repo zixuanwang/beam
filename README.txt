@@ -21,7 +21,7 @@ Linux:
 Windows (MS Visual Studio):
     mkdir build
     cd build
-    cmake -G "Visual Studio 12 Win64" ../src
+    cmake ../src
     start beam.sln 
     
 - A static library will be written to the "lib" directory.

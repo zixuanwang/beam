@@ -22,6 +22,10 @@ namespace Beam{
 				m_persistent_gains[channel][sub] = std::complex<float>(1.f, 0.f);
 			}
 		}
+		// initialize m_input_channels
+		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+			m_input_channels[channel].assign(FRAME_SIZE, std::complex<float>(0.f, 0.f));
+		}
 		// initialize gains.
 		expand_gain();
 		m_refresh_gain = 0;
@@ -32,6 +36,8 @@ namespace Beam{
 		m_time = 0.0;
 		// initialize m_angle.
 		m_angle = 0.f;
+		// initialize m_source_found;
+		m_source_found = false;
 	}
 
 	Pipeline* Pipeline::instance(){
@@ -43,21 +49,24 @@ namespace Beam{
 
 	void Pipeline::preprocess(std::vector<std::complex<float> >* input){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+			/*
 			for (int bin = 0; bin < FRAME_SIZE; ++bin){
-				input[channel][bin] *= m_dynamic_gains[channel][bin];
+				m_input_channels[channel][bin] *= m_dynamic_gains[channel][bin];
 			}
+			*/
 			m_pre_noise_suppressor[channel].phase_compensation(input[channel]);
 		}
 		m_time += (double)FRAME_SIZE / (double)SAMPLE_RATE;
 	}
 
-	bool Pipeline::source_localize(std::vector<std::complex<float> >* input, float* p_angle){
+	void Pipeline::source_localize(std::vector<std::complex<float> >* input, float* p_angle){
+		m_source_found = false;
 		//  Apply the SSL band pass filter to the input channels
 		//  and have a separate copy of the input channels 
 		//  for SSL purposes only
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			for (size_t bin = 0; bin < m_band_pass_filter.size(); ++bin){
-				input[channel][bin] *= m_band_pass_filter[bin];
+				m_input_channels[channel][bin] = input[channel][bin] * m_band_pass_filter[bin];
 			}
 		}
 		//  Noise suppression
@@ -65,8 +74,8 @@ namespace Beam{
 		//  but we do cary to suppress stationaty noises
 		double energy = 0.0;
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-			m_ssl_noise_suppressor[channel].noise_compensation(input[channel]);
-			energy += (double)Utils::computeRMS(input[channel]);
+			m_ssl_noise_suppressor[channel].noise_compensation(m_input_channels[channel]);
+			energy += (double)Utils::computeRMS(m_input_channels[channel]);
 		}
 		energy /= MAX_MICROPHONES;
 		double floor = m_noise_floor.nextLevel(m_time, energy);
@@ -74,33 +83,32 @@ namespace Beam{
 			// sound signal
 			float angle;
 			float weight;
-			float std_dev;
-			int valid;
-			int num;
-			m_ssl.process(input, &angle, &weight);
+			m_ssl.process(m_input_channels, &angle, &weight);
 			if (weight > SSL_CONTRAST_THRESHOLD){
 				m_ssl.process_next_sample(m_time, angle, weight);
-				m_ssl.get_average(m_time, p_angle, &m_confidence, &std_dev, &num, &valid);
-				m_angle = *p_angle;
-				return true;
+				m_source_found = true;
 			}
 		}
-		*p_angle = m_angle;
-		return false;
+		float std_dev;
+		int valid;
+		int num;
+		m_ssl.get_average(m_time, p_angle, &m_confidence, &std_dev, &num, &valid);
+		m_angle = *p_angle;
 	}
 
-	float Pipeline::smart_calibration(float sound_source, std::vector<std::complex<float> >* input){
-		float sigma = m_calibrator.calibrate(sound_source, input, m_persistent_gains);
-		++m_refresh_gain;
-		if (m_refresh_gain > 200){
-			expand_gain();
-			m_refresh_gain = 0;
+	void Pipeline::smart_calibration(){
+		if (m_source_found){
+			float sigma = m_calibrator.calibrate(m_angle, m_input_channels, m_persistent_gains);
+			++m_refresh_gain;
+			if (m_refresh_gain > 200){
+				expand_gain();
+				m_refresh_gain = 0;
+			}
 		}
-		return sigma;
 	}
 
 	void Pipeline::beamforming(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output){
-		m_beamformer.compute(input, output, m_angle, m_time);
+		m_beamformer.compute(input, output, m_angle, m_confidence, m_time);
 	}
 
 	void Pipeline::postprocessing(std::vector<std::complex<float> >& input){

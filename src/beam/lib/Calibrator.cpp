@@ -4,7 +4,7 @@ namespace Beam{
 	Calibrator::Calibrator(){
 		// initialize m_frequency_filter.
 		for (int sub = 0; sub < MAX_GAIN_SUBBANDS; ++sub){
-			DSPFilter::band_pass_mclt(m_frequency_filter[sub], KinectConfig::frequency_bands[sub][0] / SAMPLE_RATE, KinectConfig::frequency_bands[sub][1] / SAMPLE_RATE, KinectConfig::frequency_bands[sub][1] / SAMPLE_RATE, KinectConfig::frequency_bands[sub][2] / SAMPLE_RATE);
+			DSPFilter::band_pass_mclt(m_frequency_filter[sub], KinectConfig::frequency_bands[sub][1] / SAMPLE_RATE, KinectConfig::frequency_bands[sub][0] / SAMPLE_RATE, KinectConfig::frequency_bands[sub][0] / SAMPLE_RATE, KinectConfig::frequency_bands[sub][2] / SAMPLE_RATE);
 		}
 		// initialize m_working_frequency.
 		m_working_frequency.assign(FRAME_SIZE, std::complex<float>(0.f, 0.f));
@@ -44,6 +44,7 @@ namespace Beam{
 			if (average_rms > FLT_MIN){
 				sigma /= average_rms;
 			}
+			// TODO: maybe a bug here 
 			if (m_coeff[1] < 0.f){
 				m_coeff[1] = 0.f;
 				m_coeff[0] = average_rms;
@@ -58,12 +59,17 @@ namespace Beam{
 					est_gains[channel] = est_channel_rms[channel] / channel_rms[channel];
 				}
 			}
+			average_gain = 0.f;
 			for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 				average_gain += est_gains[channel];
 			}
 			average_gain /= MAX_MICROPHONES;
 			for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 				est_gains[channel] /= average_gain;
+			}
+			for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+				if (!((est_gains[channel] > 0.5f) && (est_gains[channel] < 2.f)))
+					return -1.f;
 			}
 			float weight = 0.001f;
 			for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
