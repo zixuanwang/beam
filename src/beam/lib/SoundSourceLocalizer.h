@@ -62,6 +62,11 @@ namespace Beam{
 		Beam::SoundSourceLocalizer::Cluster m_sample_cluster[NUM_CLUSTERS];
 		float m_upper_boundary[NUM_CLUSTERS];
 		float m_lower_boundary[NUM_CLUSTERS];
+		float m_confidence;
+		float m_std_dev;
+		float m_average;
+		int m_valid;
+		int m_num;
 	};
 }
 

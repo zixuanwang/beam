@@ -13,6 +13,11 @@ namespace Beam{
 			m_lower_boundary[i] = m_lower_boundary[i - 1] + step;
 			m_upper_boundary[i] = m_upper_boundary[i - 1] + step;
 		}
+		m_confidence = 0.f;
+		m_std_dev = 0.f;
+		m_average = 0.f;
+		m_valid = 0;
+		m_num = 0;
 	}
 
 	SoundSourceLocalizer::~SoundSourceLocalizer(){
@@ -108,7 +113,9 @@ namespace Beam{
 	}
 
 	void SoundSourceLocalizer::process_next_sample(double time, float next_point, float weight){
-		//  add next point to the measurements queue
+		// add next point to the measurements queue
+		// TODO check the limits.
+		Utils::limit(weight, 0.f, 5.f);
 		m_coord_samples.push_back(CoordsSample{ time, next_point, weight });
 		if (m_coord_samples.size() > MAX_COORD_SAMPLES){
 			m_coord_samples.pop_front();
@@ -122,8 +129,13 @@ namespace Beam{
 		*p_std_dev = 0.f;
 		*p_num = 0;
 		*p_valid = 0;
-		if (!m_new_sample && (time - m_last_time < 0.16)){
+		if (!m_new_sample && (time - m_last_time < 0.2)){
 			// no new measurements and fresh data.
+			*p_average = m_average;
+			*p_confidence = m_confidence;
+			*p_std_dev = m_std_dev;
+			*p_num = m_num;
+			*p_valid = m_valid;
 			return;
 		}
 		m_last_time = time;
@@ -229,42 +241,49 @@ namespace Beam{
 			}
 		}
 		float weight = m_sample_cluster[0].weight;
-		*p_average = m_sample_cluster[0].average;
-		*p_std_dev = m_sample_cluster[0].std_dev;
-		*p_valid = m_sample_cluster[0].valid_points;
-		*p_num = m_sample_cluster[0].num_points;
+		float average = m_sample_cluster[0].average;
+		m_std_dev = m_sample_cluster[0].std_dev;
+		m_valid = m_sample_cluster[0].valid_points;
+		m_num = m_sample_cluster[0].num_points;
 		for (int i = 1; i < NUM_CLUSTERS; ++i){
 			if (m_sample_cluster[i].weight > weight){
 				weight = m_sample_cluster[i].weight;
-				*p_average = m_sample_cluster[i].average;
-				*p_std_dev = m_sample_cluster[i].std_dev;
-				*p_valid = m_sample_cluster[i].valid_points;
-				*p_num = m_sample_cluster[i].num_points;
+				average = m_sample_cluster[i].average;
+				m_std_dev = m_sample_cluster[i].std_dev;
+				m_valid = m_sample_cluster[i].valid_points;
+				m_num = m_sample_cluster[i].num_points;
 			}
 		}
+		m_average = average;
 		//  claculate the confidence level:
 		//  it depends on:
 		//      the number of measurements [10 - 100%], 
 		//      the standard deviation [0.2 rad - 100%] and 
 		//      the time of the last measurement [ m_dLifeTime / 2 - 100%]
 		float confidence1, confidence2, confidence3;
-		if ((float)*p_valid >= SSL_CONFIDENT_MEASUREMENTS){
+		if ((float)m_valid >= SSL_CONFIDENT_MEASUREMENTS){
 			confidence1 = 1.f;
 		}
 		else{
-			confidence1 = (float)*p_valid / SSL_CONFIDENT_MEASUREMENTS;
+			confidence1 = (float)m_valid / SSL_CONFIDENT_MEASUREMENTS;
 		}
-		if (*p_std_dev <= SSL_MEASUREMENT_DEVIATION){
+		if (m_std_dev <= SSL_MEASUREMENT_DEVIATION){
 			confidence2 = 1.f;
 		}
 		else{
-			confidence2 = SSL_MEASUREMENT_DEVIATION / *p_std_dev;
+			confidence2 = SSL_MEASUREMENT_DEVIATION / m_std_dev;
 		}
 		if (confidence2 > 1.f) confidence2 = 1.f;
 		confidence3 = (float)((SSL_MEASUREMENT_LIFETIME - (time - last_measurement_time)) / SSL_MEASUREMENT_LIFETIME * 2.0);
 		if (confidence3 > 1.f){
 			confidence3 = 1.f;
 		}
-		*p_confidence = confidence1 * confidence2 * confidence3;
+		m_confidence = confidence1 * confidence2 * confidence3;
+		Utils::limit(m_confidence, 0.f, 1.f);
+		*p_average = m_average;
+		*p_confidence = m_confidence;
+		*p_std_dev = m_std_dev;
+		*p_num = m_num;
+		*p_valid = m_valid;
 	}
 }

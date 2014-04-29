@@ -70,6 +70,10 @@ namespace Beam{
 			if (n >(T)0){
 				v /= n;
 			}
+			else{
+				v.real((T)0);
+				v.imag((T)0);
+			}
 		}
 		/// interpolate two complex numbers
 		template<typename T>
@@ -241,6 +245,15 @@ namespace Beam{
 			//-----------------------------------
 			for (i = 0; i < mm; i++){
 				param[i] = vect_y[i] / matr_x[i][i];
+			}
+		}
+		template<typename T>
+		static void limit(T& v, T low, T high){
+			if (v < low){
+				v = low;
+			}
+			if (v > high){
+				v = high;
 			}
 		}
 	};
