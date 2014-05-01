@@ -5,8 +5,8 @@
 #include <iostream>
 
 int main(int argc, char* argv[]){
-	//// example to run the beamformer.
-	//// sampling rate is 16000.
+	// example to run the beamformer.
+	// sampling rate is 16000.
 	Beam::WavReader wr("c:/dropbox/microsoft/beam/1.wav");
 	int len = 1000000;
 	char* buf = new char[len];

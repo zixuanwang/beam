@@ -38,4 +38,15 @@ namespace Beam{
 			}
 		}
 	}
+
+	void WavReader::convert_format(std::vector<float>* input, char* buf, int buf_size){
+		short* ptr = (short*)(buf);
+		int len = buf_size / 2 / MAX_MICROPHONES;
+		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+			input[channel].assign(len, 0.f);
+			for (int bin = 0; bin < len; ++bin){
+				input[channel][bin] = (float)(ptr[MAX_MICROPHONES * bin + channel]);
+			}
+		}
+	}
 }

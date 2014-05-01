@@ -50,11 +50,9 @@ namespace Beam{
 	void Pipeline::preprocess(std::vector<std::complex<float> >* input){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			// TODO check dynamic gains here.
-			/*
 			for (int bin = 0; bin < FRAME_SIZE; ++bin){
-				m_input_channels[channel][bin] *= m_dynamic_gains[channel][bin];
+				input[channel][bin] *= m_dynamic_gains[channel][bin];
 			}
-			*/
 			m_pre_noise_suppressor[channel].phase_compensation(input[channel]);
 		}
 		m_time += (double)FRAME_SIZE / (double)SAMPLE_RATE;

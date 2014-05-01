@@ -45,7 +45,7 @@ namespace Beam{
 				sigma /= average_rms;
 			}
 			// TODO: maybe a bug here 
-			if (m_coeff[1] < 0.f){
+			if (m_coeff[1] > 0.f){
 				m_coeff[1] = 0.f;
 				m_coeff[0] = average_rms;
 				sigma = -1.f;

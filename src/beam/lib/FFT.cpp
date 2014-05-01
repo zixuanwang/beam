@@ -14,7 +14,7 @@ namespace Beam{
 	FFT::FFT(){
 		int two_frame_size = 2 * FRAME_SIZE;
 		for (int i = 0; i < two_frame_size; ++i){
-			m_ha[i] = sinf(i * (float)PI / (two_frame_size - 1));
+			m_ha[i] = sinf(i * (float)PI / two_frame_size);
 			m_prev_prev[i] = 0.f;
 			m_prev[i] = 0.f;
 		}
