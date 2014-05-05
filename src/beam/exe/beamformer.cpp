@@ -39,6 +39,7 @@ int main(int argc, char* argv[]){
 		input_current[channel].assign(FRAME_SIZE, 0.f);
 		input_prev[channel].assign(FRAME_SIZE, 0.f);
 	}
+	size_t frame_count = 0;
 	while (true){
 		int buf_filled = 0;
 		reader.read(buf, buf_size, &buf_filled);
@@ -77,6 +78,7 @@ int main(int argc, char* argv[]){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			input_prev[channel].assign(input_current[channel].begin(), input_current[channel].end());
 		}
+		std::cout << frame_count++ << " frames are converted..." << std::endl;
 	}
 	delete[] buf;
 	delete[] output_buf;

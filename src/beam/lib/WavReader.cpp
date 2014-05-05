@@ -11,9 +11,8 @@ namespace Beam{
 			m_in_stream.seekg(40, m_in_stream.beg);
 			m_in_stream.read((char*)&m_size, sizeof(m_size));
 			m_in_stream.seekg(0, m_in_stream.end);
-			int length = (int)m_in_stream.tellg();
-			length -= 44;
-			m_size = m_size < length ? m_size : length;
+			m_data_length = m_in_stream.tellg();
+			m_data_length -= 44;
 			m_in_stream.seekg(44, m_in_stream.beg);
 		}
 	}
@@ -26,14 +25,14 @@ namespace Beam{
 
 	void WavReader::read(char* buf, int buf_size, int* filled_size){
 		if (m_in_stream.good()){
-			if (m_size < buf_size){
-				m_in_stream.read(buf, m_size);
-				m_size = 0;
-				*filled_size = m_size;
+			if (m_data_length < buf_size){
+				m_in_stream.read(buf, m_data_length);
+				m_data_length = 0;
+				*filled_size = (int)m_data_length;
 			}
 			else{
 				m_in_stream.read(buf, buf_size);
-				m_size -= buf_size;
+				m_data_length -= buf_size;
 				*filled_size = buf_size;
 			}
 		}

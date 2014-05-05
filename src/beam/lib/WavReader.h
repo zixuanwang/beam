@@ -19,6 +19,7 @@ namespace Beam{
 		int m_sample_rate;
 		short m_channels;
 		int m_size;
+		std::streampos m_data_length;
 	};
 }
 
