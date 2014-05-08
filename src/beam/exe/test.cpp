@@ -8,12 +8,12 @@ int main(int argc, char* argv[]){
 	// example to run the beamformer.
 	// sampling rate is 16000.
 	Beam::WavReader wr("c:/dropbox/microsoft/beam/1.wav");
-	int len = 1000000;
+	int len = 4000000;
 	char* buf = new char[len];
 	short* ptr = (short*)buf;
 	int buf_filled;
 	wr.read(buf, len, &buf_filled);
-	for (int frame = 0; frame < 128; ++frame){
+	for (int frame = 0; frame < 1280; ++frame){
 		std::stringstream ss;
 		ss << "c:/users/danwa/desktop/" << frame << ".txt";
 		std::ofstream out_stream(ss.str());
@@ -41,10 +41,10 @@ int main(int argc, char* argv[]){
 				out_stream << frequency_input[channel][bin] << std::endl;
 			}
 		}
-		Beam::Pipeline::instance()->preprocess(frequency_input); // phase compensation
+		//Beam::Pipeline::instance()->preprocess(frequency_input); // phase compensation
 		float angle;
 		Beam::Pipeline::instance()->source_localize(frequency_input, &angle); // sound source localization & noise suppression
-		Beam::Pipeline::instance()->smart_calibration(); // calibration
+		//Beam::Pipeline::instance()->smart_calibration(); // calibration
 		Beam::Pipeline::instance()->beamforming(frequency_input, beamformer_output); // beamforming
 		for (auto& v : beamformer_output){
 			std::cout << v << std::endl;

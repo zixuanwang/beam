@@ -138,7 +138,7 @@ namespace Beam{
 		// adaptive beam
 		int beg_bin = 6;
 		int end_bin = 225;
-		for (int bin = beg_bin; bin < end_bin; ++bin){
+		for (int bin = beg_bin; bin <= end_bin; ++bin){
 			std::complex<float> wo0, wo1, wo2, wo3;
 			std::complex<float> m0, m1, m2, m3;
 			std::complex<float> w0, w1, w2, w3;

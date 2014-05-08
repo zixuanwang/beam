@@ -55,10 +55,10 @@ namespace Beam{
 			}
 			m_pre_noise_suppressor[channel].phase_compensation(input[channel]);
 		}
-		m_time += (double)FRAME_SIZE / (double)SAMPLE_RATE;
 	}
 
 	void Pipeline::source_localize(std::vector<std::complex<float> >* input, float* p_angle){
+		m_time += (double)FRAME_SIZE / (double)SAMPLE_RATE;
 		m_source_found = false;
 		//  Apply the SSL band pass filter to the input channels
 		//  and have a separate copy of the input channels 

@@ -63,12 +63,12 @@ int main(int argc, char* argv[]){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			fft.analyze(input[channel], frequency_input[channel]); // do FFT
 		}
-		Beam::Pipeline::instance()->preprocess(frequency_input); // phase compensation
+		//Beam::Pipeline::instance()->preprocess(frequency_input); // phase compensation
 		float angle;
 		Beam::Pipeline::instance()->source_localize(frequency_input, &angle); // sound source localization & noise suppression
-		Beam::Pipeline::instance()->smart_calibration(); // calibration
+		//Beam::Pipeline::instance()->smart_calibration(); // calibration
 		Beam::Pipeline::instance()->beamforming(frequency_input, beamformer_output); // beamforming
-		Beam::Pipeline::instance()->postprocessing(beamformer_output); // frequency shifting
+		//Beam::Pipeline::instance()->postprocessing(beamformer_output); // frequency shifting
 		fft.synthesize(beamformer_output, output); // do IFFT
 		for (int i = 0; i < FRAME_SIZE; ++i){
 			output_ptr[i] = (short)output[i];
