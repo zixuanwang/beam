@@ -2,23 +2,33 @@
 #define MCLT_H_
 
 #include "fftw3.h"
+#include "GlobalConfig.h"
 #include "Utils.h"
 
 namespace Beam{
 	class MCLT {
 	public:
 		/// constructor with the size.
-		MCLT(int M);
+		MCLT();
 		~MCLT();
-		/// compute MCLT.
-		/// the input size is 2 * M and the output are M complex numbers.
-		void compute(const std::vector<float>& input, std::vector<std::complex<float> >& output);
+		/// compute MCLT. make sure that output is allocated.
+		/// the input must have 2 * FRAME_SIZE.
+		/// the output must have FRAME_SIZE.
+		void analyze(std::vector<float>& input, std::vector<std::complex<float> >& output);
+		/// compute IMCLT. make sure that output is allocated.
+		/// the input must have FRAME_SIZE.
+		/// the output must have 2 * FRAME_SIZE.
+		/// the output has half frame delay.
+		void synthesize(std::vector<std::complex<float> >& input, std::vector<float>& output);
 	private:
-		int m_M;
-		double m_coeff;
-		std::unique_ptr<double[]> m_ha;
-		std::unique_ptr<double[]> m_u;
-		std::unique_ptr<double[]> m_v;
+		float m_coeff;
+		float m_input[FRAME_SIZE * 2];
+		float m_ha[FRAME_SIZE * 2];
+		float m_prev_prev[FRAME_SIZE * 2];
+		float m_prev[FRAME_SIZE * 2];
+		float m_current[FRAME_SIZE * 2];
+		float m_u[FRAME_SIZE];
+		float m_v[FRAME_SIZE];
 	};
 }
 
