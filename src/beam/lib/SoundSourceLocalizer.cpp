@@ -76,10 +76,10 @@ namespace Beam{
 		float ssl_sum[NUM_ANGLES] = { 0.f };
 		int bin, meas_bin;
 		for (bin = m_start_bin, meas_bin = 0; bin < m_end_bin; ++bin, ++meas_bin){
-			float sample_amplitude = std::abs(input[0][bin]);
+			float sample_amplitude = Utils::abs_complex(input[0][bin]);
 			for (int pair = 0; pair < (MAX_MICROPHONES - 1); ++pair){
 				delta[pair] = Utils::normalize_angle(std::arg(input[0][bin]) - std::arg(input[pair + 1][bin]));
-				sample_amplitude += std::abs(input[pair + 1][bin]); // bug in the source code. L300
+				sample_amplitude += Utils::abs_complex(input[pair + 1][bin]); // bug in the source code. L300
 			}
 			sample_amplitude /= (float)MAX_MICROPHONES;
 			float min_dist = 1e10f;

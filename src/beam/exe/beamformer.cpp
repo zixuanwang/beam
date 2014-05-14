@@ -64,10 +64,10 @@ int main(int argc, char* argv[]){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			mclt.analyze(input[channel], frequency_input[channel]); // transform
 		}
-		//Beam::Pipeline::instance()->preprocess(frequency_input); // phase compensation
+		Beam::Pipeline::instance()->preprocess(frequency_input); // phase compensation
 		float angle;
 		Beam::Pipeline::instance()->source_localize(frequency_input, &angle); // sound source localization & noise suppression
-		//Beam::Pipeline::instance()->smart_calibration(); // calibration
+		Beam::Pipeline::instance()->smart_calibration(); // calibration
 		Beam::Pipeline::instance()->beamforming(frequency_input, beamformer_output); // beamforming
 		//Beam::Pipeline::instance()->postprocessing(beamformer_output); // frequency shifting
 		mclt.synthesize(beamformer_output, output); // inverse transform

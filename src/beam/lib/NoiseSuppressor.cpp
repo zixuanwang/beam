@@ -24,7 +24,6 @@ namespace Beam{
 		set_suppress(suppress);
 
 		m_phase_num_frames = 0;
-
 		m_noise_num_frames = 0;
 	}
 
@@ -72,9 +71,11 @@ namespace Beam{
 				continue;
 			}
 			//  Update the complex phase model
-			std::complex<float> element = output[i];
-			std::complex<float> model = m_phase_model[i];
-			float delta = std::norm(element - model);
+			std::complex<float>& element = output[i];
+			std::complex<float>& model = m_phase_model[i];
+			std::complex<float> diff = output[i];
+			diff -= model;
+			float delta = Utils::norm_complex(diff);
 			//  Avoid divide by 0
 			float phase_var = m_phase_model_variance[i];
 			float ratio = 0.f;
@@ -83,33 +84,34 @@ namespace Beam{
 			}
 			float adapt = phase_adaptive_ratio * ratio;
 			if (adapt < 1.f){
-				model += (element - model) * adapt;
+				diff *= adapt;
+				model += diff;
 			}
 			else{
 				model = element;
 			}
-			m_phase_model[i] = model;
 			//  Update the variance
 			m_phase_model_variance[i] = (1.f - phase_adaptive_ratio) * m_phase_model_variance[i] + phase_adaptive_ratio * delta;
 			//  Update the complex phase model speed
 			std::complex<float> current = output[i];
 			std::complex<float> previous = m_phase_model_prev[i];
-			std::complex<float> speed = m_phase_model_update[i];
+			std::complex<float>& speed = m_phase_model_update[i];
 			Utils::normalize_complex(current);
 			Utils::normalize_complex(previous);
-			std::complex<float> speed_update = speed * previous;
-			if (std::abs(speed_update) == 0.f) continue;
+			std::complex<float> speed_update = m_phase_model_update[i];
+			speed_update *= previous;
+			if (Utils::abs_complex(speed_update) == 0.f) continue;
 			speed_update = current / speed_update;
-			if (std::abs(speed_update) == 0.f) continue;
+			if (Utils::abs_complex(speed_update) == 0.f) continue;
 			adapt = speed_adaptive_ratio * ratio;
 			if (adapt < 1.f){
-				speed *= speed_update * adapt;
+				speed_update *= adapt;
+				speed *= speed_update;
 			}
 			else{
 				speed *= speed_update;
 			}
 			Utils::normalize_complex(speed);
-			m_phase_model_update[i] = speed;
 		}
 		m_phase_model_prev.assign(output.begin(), output.end());
 		//  Compensate the phase
@@ -131,7 +133,7 @@ namespace Beam{
 		//	Suppress the stationary noise
 		for (int i = 0; i < bins; ++i){
 			float ratio = 1.f;
-			float element = std::abs(output[i]);
+			float element = Utils::abs_complex(output[i]);
 			float model = m_noise_model[i];
 			if (m_noise_num_frames == 0){
 				m_noise_model[i] = element;
@@ -176,9 +178,9 @@ namespace Beam{
 		for (int i = 1; i < bins; ++i){
 			std::complex<float> element_l = output[i - 1];
 			std::complex<float> element_r = output[i];
-			float mag_l = std::abs(element_l);
+			float mag_l = Utils::abs_complex(element_l);
 			float arg_l = std::arg(element_l);
-			float mag_r = std::abs(element_r);
+			float mag_r = Utils::abs_complex(element_r);
 			float arg_r = std::arg(element_r);
 			float mag = 0.8f * mag_l + 0.2f * mag_r;
 			float arg = 0.8f * arg_l + 0.2f * arg_r;

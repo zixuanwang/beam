@@ -136,34 +136,34 @@ namespace Beam{
 			output[bin].imag(0.f);
 		}
 		// adaptive beam
-		int beg_bin = 6;
-		int end_bin = 225;
-		for (int bin = beg_bin; bin <= end_bin; ++bin){
-			std::complex<float> wo0, wo1, wo2, wo3;
-			std::complex<float> m0, m1, m2, m3;
-			std::complex<float> w0, w1, w2, w3;
-			std::complex<float> scale(F2RAISED23_INV, 0.f);
-			int weight_index = m_beam * FRAME_SIZE * MAX_MICROPHONES + bin * MAX_MICROPHONES;
+		//int beg_bin = 6;
+		//int end_bin = 225;
+		//for (int bin = beg_bin; bin <= end_bin; ++bin){
+		//	std::complex<float> wo0, wo1, wo2, wo3;
+		//	std::complex<float> m0, m1, m2, m3;
+		//	std::complex<float> w0, w1, w2, w3;
+		//	std::complex<float> scale(F2RAISED23_INV, 0.f);
+		//	int weight_index = m_beam * FRAME_SIZE * MAX_MICROPHONES + bin * MAX_MICROPHONES;
 
-			m0 = input[0][bin] * scale;
-			m1 = input[1][bin] * scale;
-			m2 = input[2][bin] * scale;
-			m3 = input[3][bin] * scale;
-			w0 = (KinectConfig::kinect_weights.dd + weight_index)[0];
-			w1 = (KinectConfig::kinect_weights.dd + weight_index)[1];
-			w2 = (KinectConfig::kinect_weights.dd + weight_index)[2];
-			w3 = (KinectConfig::kinect_weights.dd + weight_index)[3];
-			wo0 = m_pcm_weights[m_beam][0][bin];
-			wo1 = m_pcm_weights[m_beam][1][bin];
-			wo2 = m_pcm_weights[m_beam][2][bin];
-			wo3 = m_pcm_weights[m_beam][3][bin];
-			ansi_bf_msr_process_quad_loop_fast(&wo0, &wo1, &wo2, &wo3, m0, m1, m2, m3, w0, w1, w2, w3, 0.0000010f, 0.0080000f);
-			// Update working weights
-			m_pcm_weights[m_beam][0][bin] = wo0;
-			m_pcm_weights[m_beam][1][bin] = wo1;
-			m_pcm_weights[m_beam][2][bin] = wo2;
-			m_pcm_weights[m_beam][3][bin] = wo3;
-		}
+		//	m0 = input[0][bin] * scale;
+		//	m1 = input[1][bin] * scale;
+		//	m2 = input[2][bin] * scale;
+		//	m3 = input[3][bin] * scale;
+		//	w0 = (KinectConfig::kinect_weights.dd + weight_index)[0];
+		//	w1 = (KinectConfig::kinect_weights.dd + weight_index)[1];
+		//	w2 = (KinectConfig::kinect_weights.dd + weight_index)[2];
+		//	w3 = (KinectConfig::kinect_weights.dd + weight_index)[3];
+		//	wo0 = m_pcm_weights[m_beam][0][bin];
+		//	wo1 = m_pcm_weights[m_beam][1][bin];
+		//	wo2 = m_pcm_weights[m_beam][2][bin];
+		//	wo3 = m_pcm_weights[m_beam][3][bin];
+		//	ansi_bf_msr_process_quad_loop_fast(&wo0, &wo1, &wo2, &wo3, m0, m1, m2, m3, w0, w1, w2, w3, 0.0000010f, 0.0080000f);
+		//	// Update working weights
+		//	m_pcm_weights[m_beam][0][bin] = wo0;
+		//	m_pcm_weights[m_beam][1][bin] = wo1;
+		//	m_pcm_weights[m_beam][2][bin] = wo2;
+		//	m_pcm_weights[m_beam][3][bin] = wo3;
+		//}
 	}
 
 	void Beamformer::ansi_bf_msr_process_quad_loop_fast(std::complex<float>* wo0, std::complex<float>* wo1, std::complex<float>* wo2, std::complex<float>* wo3, std::complex<float>& m0, std::complex<float>& m1, std::complex<float>& m2, std::complex<float>& m3, std::complex<float>& w0, std::complex<float>& w1, std::complex<float>& w2, std::complex<float>& w3, float nu, float mu){

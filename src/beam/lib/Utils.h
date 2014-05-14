@@ -63,23 +63,38 @@ namespace Beam{
 			while (angle >= (T)(TWO_PI)) angle -= (T)(TWO_PI);
 			return angle;
 		}
+		/// compute norm of a complex number. std::norm is too slow.
+		static float norm_complex(const std::complex<float>& v){
+			float re = v.real();
+			float im = v.imag();
+			float n = re * re + im * im;
+			if (n > 0.f && n <= FLT_MAX){
+				return n;
+			}
+			return 0.f;
+		}
+
+		/// compute abs of a complex number. std::abs is too slow.
+		static float abs_complex(const std::complex<float>& v){
+			float n = norm_complex(v);
+			return sqrtf(n);
+		}
 		/// normalize a complex number to have unit amplitude.
-		template<typename T>
-		static void normalize_complex(std::complex<T>& v){
-			T n = std::abs(v);
-			if (n >(T)0){
+		static void normalize_complex(std::complex<float>& v){
+			float n = abs_complex(v);
+			if (n > 0.f){
 				v /= n;
 			}
 			else{
-				v.real((T)0);
-				v.imag((T)0);
+				v.real(0.f);
+				v.imag(0.f);
 			}
 		}
 		/// interpolate two complex numbers
 		template<typename T>
 		static std::complex<T> interpolate(const std::complex<T>& p0, const std::complex<T>& p1, T t){
-			T rho0 = std::abs(p0);
-			T rho1 = std::abs(p1);
+			T rho0 = abs_complex(p0);
+			T rho1 = abs_complex(p1);
 			T rho = rho0 + (t * (rho1 - rho0));
 			T fi0 = normalize_angle(std::arg(p0));
 			T fi1 = normalize_angle(std::arg(p1));
@@ -91,13 +106,12 @@ namespace Beam{
 			return result;
 		}
 
-		template<typename T>
-		static T computeRMS(const std::vector<std::complex<T> >& array){
-			T energy = (T)0;
+		static float computeRMS(const std::vector<std::complex<float> >& array){
+			float energy = 0.f;
 			for (auto& v : array){
-				energy += std::norm(v);
+				energy += norm_complex(v);
 			}
-			return sqrt(energy / (T)array.size());
+			return sqrtf(energy / (float)array.size());
 		}
 		/// square root for each element
 		template<typename T>
