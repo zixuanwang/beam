@@ -11,7 +11,6 @@ namespace Beam{
 	public:
 		Beamformer();
 		~Beamformer();
-		void init();
 		void compute(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, float angle, float confidence, double time);
 		void ansi_bf_msr_process_quad_loop_fast(std::complex<float>* wo0, std::complex<float>* wo1, std::complex<float>* wo2, std::complex<float>* wo3, std::complex<float>& m0, std::complex<float>& m1, std::complex<float>& m2, std::complex<float>& m3, std::complex<float>& w0, std::complex<float>& w1, std::complex<float>& w2, std::complex<float>& w3, float nu, float mu);
 	private:

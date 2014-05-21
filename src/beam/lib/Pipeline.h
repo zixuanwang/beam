@@ -4,6 +4,7 @@
 #include <iostream>
 #include "Beamformer.h"
 #include "Calibrator.h"
+#include "DelaySumBeamformer.h"
 #include "DSPFilter.h"
 #include "FFT.h"
 #include "GlobalConfig.h"
@@ -21,7 +22,7 @@ namespace Beam{
 		void preprocess(std::vector<std::complex<float> >* input);
 		// if the sound source can be localized, the angle is store in p_angle.
 		void source_localize(std::vector<std::complex<float> >* input, float* p_angle);
-		void smart_calibration();
+		void smart_calibration(std::vector<std::complex<float> >* input);
 		void beamforming(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output);
 		void postprocessing(std::vector<std::complex<float> >& input);
 		void expand_gain();

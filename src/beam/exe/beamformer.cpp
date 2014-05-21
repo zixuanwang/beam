@@ -25,7 +25,7 @@ int main(int argc, char* argv[]){
 	parse_command_line(argc, argv);
 	Beam::WavReader reader(input_file);
 	Beam::WavWriter writer(output_file, 16000, 1);
-	Beam::MCLT mclt;
+	Beam::FFT trans;
 	int buf_size = FRAME_SIZE * 8;
 	int output_buf_size = FRAME_SIZE * 2;
 	char* buf = new char[buf_size];
@@ -62,15 +62,15 @@ int main(int argc, char* argv[]){
 			frequency_input[channel].assign(FRAME_SIZE, std::complex<float>(0.f, 0.f));
 		}
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-			mclt.analyze(input[channel], frequency_input[channel]); // transform
+			trans.analyze(input[channel], frequency_input[channel]); // transform
 		}
 		Beam::Pipeline::instance()->preprocess(frequency_input); // phase compensation
 		float angle;
 		Beam::Pipeline::instance()->source_localize(frequency_input, &angle); // sound source localization & noise suppression
-		Beam::Pipeline::instance()->smart_calibration(); // calibration
+		Beam::Pipeline::instance()->smart_calibration(frequency_input); // calibration
 		Beam::Pipeline::instance()->beamforming(frequency_input, beamformer_output); // beamforming
 		//Beam::Pipeline::instance()->postprocessing(beamformer_output); // frequency shifting
-		mclt.synthesize(beamformer_output, output); // inverse transform
+		trans.synthesize(beamformer_output, output); // inverse transform
 		for (int i = 0; i < FRAME_SIZE; ++i){
 			output_ptr[i] = (short)output[i];
 		}

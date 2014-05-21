@@ -29,8 +29,6 @@ namespace Beam{
 		// initialize gains.
 		expand_gain();
 		m_refresh_gain = 0;
-		// initialize m_beamformer.
-		m_beamformer.init();
 		m_confidence = 0.f;
 		// initialize m_time.
 		m_time = 0.0;
@@ -95,7 +93,7 @@ namespace Beam{
 		m_angle = *p_angle;
 	}
 
-	void Pipeline::smart_calibration(){
+	void Pipeline::smart_calibration(std::vector<std::complex<float> >* input){
 		if (m_source_found){
 			float sigma = m_calibrator.calibrate(m_angle, m_input_channels, m_persistent_gains);
 			++m_refresh_gain;

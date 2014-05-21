@@ -1,18 +1,11 @@
 #include "Beamformer.h"
-#include <iostream>
 
 namespace Beam{
 	Beamformer::Beamformer() : m_beam(5){
 		// initialize the first and last bin
 		m_first_bin = (int)(KinectConfig::kinect_descriptor.freq_low / (float)SAMPLE_RATE * (float)FRAME_SIZE * 2.f);
 		m_last_bin = (int)(KinectConfig::kinect_descriptor.freq_high / (float)SAMPLE_RATE * (float)FRAME_SIZE * 2.f);
-	}
 
-	Beamformer::~Beamformer(){
-	
-	}
-
-	void Beamformer::init(){
 		for (int beam = 0; beam < MAX_BEAMS; ++beam){
 			for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 				m_pcm_weights[beam][channel].assign(FRAME_SIZE, std::complex<float>(0.f, 0.f));
@@ -78,6 +71,10 @@ namespace Beam{
 				}
 			}
 		}
+	}
+
+	Beamformer::~Beamformer(){
+	
 	}
 
 	void Beamformer::compute(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, float angle, float confidence, double time){
