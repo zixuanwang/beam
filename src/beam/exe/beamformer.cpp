@@ -69,7 +69,7 @@ int main(int argc, char* argv[]){
 		Beam::Pipeline::instance()->source_localize(frequency_input, &angle); // sound source localization & noise suppression
 		Beam::Pipeline::instance()->smart_calibration(frequency_input); // calibration
 		Beam::Pipeline::instance()->beamforming(frequency_input, beamformer_output); // beamforming
-		//Beam::Pipeline::instance()->postprocessing(beamformer_output); // frequency shifting
+		////Beam::Pipeline::instance()->postprocessing(beamformer_output); // frequency shifting
 		trans.synthesize(beamformer_output, output); // inverse transform
 		for (int i = 0; i < FRAME_SIZE; ++i){
 			output_ptr[i] = (short)output[i];

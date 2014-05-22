@@ -10,6 +10,7 @@ namespace Beam{
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			m_ssl_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 10.f);
 			m_pre_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
+			m_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 10.f);
 		}
 		m_out_noise_suppressor.init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
 		m_ssl.init(SAMPLE_RATE, FRAME_SIZE);
@@ -48,6 +49,7 @@ namespace Beam{
 	void Pipeline::preprocess(std::vector<std::complex<float> >* input){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			// TODO check dynamic gains here.
+			m_suppressor[channel].noise_compensation(input[channel]); // NS here.
 			for (int bin = 0; bin < FRAME_SIZE; ++bin){
 				input[channel][bin] *= m_dynamic_gains[channel][bin];
 			}

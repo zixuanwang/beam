@@ -115,7 +115,7 @@ namespace Beam{
 	void SoundSourceLocalizer::process_next_sample(double time, float next_point, float weight){
 		// add next point to the measurements queue
 		// TODO check the limits.
-		Utils::limit(weight, 0.f, 5.f);
+		//Utils::limit(weight, 0.f, 5.f);
 		m_coord_samples.push_back(CoordsSample{ time, next_point, weight });
 		if (m_coord_samples.size() > MAX_COORD_SAMPLES){
 			m_coord_samples.pop_front();

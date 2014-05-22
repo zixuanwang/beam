@@ -36,6 +36,7 @@ namespace Beam{
 		std::vector<std::complex<float> > m_band_pass_filter; // band pass filter
 		NoiseSuppressor m_pre_noise_suppressor[MAX_MICROPHONES]; // for phase compensation in the preprocessing.
 		NoiseSuppressor m_ssl_noise_suppressor[MAX_MICROPHONES]; // for noise suppression in ssl.
+		NoiseSuppressor m_suppressor[MAX_MICROPHONES]; // for testing.
 		NoiseSuppressor m_out_noise_suppressor; // for frequency shifting the output.
 		Tracker m_noise_floor; // VAD
 		SoundSourceLocalizer m_ssl; // SSL

@@ -882,6 +882,8 @@ namespace Beam{
 				}
 			}
 		}
+		delete[] sin_tab;
+		delete[] tempbuf;
 	}
 }
 
