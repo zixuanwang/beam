@@ -71,7 +71,7 @@ namespace Beam{
 		}
 	}
 
-	void SoundSourceLocalizer::process(std::vector<std::complex<float> >* input, float* p_angle, float* p_weight){
+	void SoundSourceLocalizer::process(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >* input_, float* p_angle, float* p_weight){
 		float delta[MAX_MICROPHONES - 1];
 		float ssl_sum[NUM_ANGLES] = { 0.f };
 		int bin, meas_bin;
@@ -79,10 +79,10 @@ namespace Beam{
 			float sample_amplitude = Utils::abs_complex(input[0][bin]);
 			for (int pair = 0; pair < (MAX_MICROPHONES - 1); ++pair){
 				delta[pair] = Utils::normalize_angle(std::arg(input[0][bin]) - std::arg(input[pair + 1][bin]));
-				sample_amplitude += Utils::abs_complex(input[pair + 1][bin]); // bug in the source code. L300
+				sample_amplitude += Utils::abs_complex(input[pair + 1][bin]);
 			}
 			sample_amplitude /= (float)MAX_MICROPHONES;
-			float min_dist = 1e10f;
+			float min_dist = FLT_MAX;
 			int min_index = 0;
 			for (int angle = 0; angle < NUM_ANGLES; ++angle){
 				float dist = 0.0;
@@ -96,6 +96,14 @@ namespace Beam{
 				}
 			}
 			ssl_sum[min_index] += sample_amplitude;
+
+			// TODO: spatial filtering here
+			//float angle_diff = fabs(m_angle[min_index] - m_average);
+			//if (angle_diff > 0.25f){
+			//	for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+			//		input_[channel][bin] *= expf(-angle_diff);
+			//	}
+			//}
 		}
 		auto iter = std::max_element(ssl_sum, ssl_sum + NUM_ANGLES);
 		float weight_max = *iter;

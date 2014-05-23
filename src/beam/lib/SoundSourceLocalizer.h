@@ -26,7 +26,7 @@ namespace Beam{
 		SoundSourceLocalizer();
 		~SoundSourceLocalizer();
 		void init(float sample_rate, int frame_size);
-		void process(std::vector<std::complex<float> >* input, float* p_angle, float* p_weight);
+		void process(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >* input_, float* p_angle, float* p_weight);
 		void process_next_sample(double time, float next_point, float weight);
 		/// filtering the angle.
 		void get_average(double time, float* p_average, float* p_confidence, float* p_std_dev, int* p_num, int* p_valid);

@@ -1,6 +1,5 @@
 #include "beam\lib\Beamformer.h"
 #include "beam\lib\FFT.h"
-#include "beam\lib\MCLT.h"
 #include "beam\lib\Pipeline.h"
 #include "beam\lib\Utils.h"
 #include <iostream>
@@ -69,7 +68,7 @@ int main(int argc, char* argv[]){
 		Beam::Pipeline::instance()->source_localize(frequency_input, &angle); // sound source localization & noise suppression
 		Beam::Pipeline::instance()->smart_calibration(frequency_input); // calibration
 		Beam::Pipeline::instance()->beamforming(frequency_input, beamformer_output); // beamforming
-		////Beam::Pipeline::instance()->postprocessing(beamformer_output); // frequency shifting
+		//Beam::Pipeline::instance()->postprocessing(beamformer_output); // 
 		trans.synthesize(beamformer_output, output); // inverse transform
 		for (int i = 0; i < FRAME_SIZE; ++i){
 			output_ptr[i] = (short)output[i];
@@ -79,7 +78,7 @@ int main(int argc, char* argv[]){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			input_prev[channel].assign(input_current[channel].begin(), input_current[channel].end());
 		}
-		std::cout << frame_count++ << " frames are converted..." << std::endl;
+		//std::cout << frame_count++ << " frames are converted..." << std::endl;
 	}
 	delete[] buf;
 	delete[] output_buf;

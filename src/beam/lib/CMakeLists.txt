@@ -7,7 +7,6 @@ SET(libbeam_sources
 	FFT.h FFT.cpp
 	GlobalConfig.h
 	KinectConfig.h KinectConfig.cpp
-	MCLT.h MCLT.cpp
 	MicArrayDescriptor.h
 	MicArrayWeights.h
 	Microphone.h Microphone.cpp
@@ -21,5 +20,5 @@ SET(libbeam_sources
 )
 ADD_LIBRARY(libbeam ${libbeam_sources})
 
-TARGET_LINK_LIBRARIES(libbeam ${CMAKE_PREFIX_PATH}/libfftw3f-3.lib ${CMAKE_PREFIX_PATH}/libfftw3-3.lib) 
+TARGET_LINK_LIBRARIES(libbeam) 
 

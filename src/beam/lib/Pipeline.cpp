@@ -10,9 +10,9 @@ namespace Beam{
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			m_ssl_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 10.f);
 			m_pre_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
-			m_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 10.f);
+			m_pre_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 10.f);
 		}
-		m_out_noise_suppressor.init(SAMPLE_RATE, FRAME_SIZE, 1.f, 1.f);
+		m_out_noise_suppressor.init(SAMPLE_RATE, FRAME_SIZE, 1.f, 10.f);
 		m_ssl.init(SAMPLE_RATE, FRAME_SIZE);
 		// initialize persistent and dynamic gains
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
@@ -49,7 +49,7 @@ namespace Beam{
 	void Pipeline::preprocess(std::vector<std::complex<float> >* input){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			// TODO check dynamic gains here.
-			m_suppressor[channel].noise_compensation(input[channel]); // NS here.
+			m_pre_suppressor[channel].noise_compensation(input[channel]); // NS here.
 			for (int bin = 0; bin < FRAME_SIZE; ++bin){
 				input[channel][bin] *= m_dynamic_gains[channel][bin];
 			}
@@ -82,7 +82,7 @@ namespace Beam{
 			// sound signal
 			float angle;
 			float weight;
-			m_ssl.process(m_input_channels, &angle, &weight);
+			m_ssl.process(m_input_channels, input, &angle, &weight);
 			if (weight > SSL_CONTRAST_THRESHOLD){
 				m_ssl.process_next_sample(m_time, angle, weight);
 				m_source_found = true;
@@ -111,7 +111,8 @@ namespace Beam{
 	}
 
 	void Pipeline::postprocessing(std::vector<std::complex<float> >& input){
-		m_out_noise_suppressor.frequency_shifting(input);
+		//m_out_noise_suppressor.frequency_shifting(input);
+		//m_out_noise_suppressor.noise_compensation(input);
 	}
 
 	void Pipeline::expand_gain(){
