@@ -3,6 +3,7 @@ SET(libbeam_sources
 	Calibrator.h Calibrator.cpp
 	Coords.h
 	DelaySumBeamformer.h DelaySumBeamformer.cpp
+	DeReverb.h DeReverb.cpp
 	DSPFilter.h DSPFilter.cpp
 	FFT.h FFT.cpp
 	GlobalConfig.h

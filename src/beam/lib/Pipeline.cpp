@@ -35,7 +35,9 @@ namespace Beam{
 		m_time = 0.0;
 		// initialize m_angle.
 		m_angle = 0.f;
-		// initialize m_source_found;
+		// initialize m_voice_found.
+		m_voice_found = false;
+		// initialize m_source_found.
 		m_source_found = false;
 	}
 
@@ -53,7 +55,7 @@ namespace Beam{
 			for (int bin = 0; bin < FRAME_SIZE; ++bin){
 				input[channel][bin] *= m_dynamic_gains[channel][bin];
 			}
-			m_pre_noise_suppressor[channel].phase_compensation(input[channel]);
+			//m_pre_noise_suppressor[channel].phase_compensation(input[channel]);
 		}
 	}
 
@@ -80,6 +82,7 @@ namespace Beam{
 		double floor = m_noise_floor.nextLevel(m_time, energy);
 		if (energy > SSL_RELATIVE_ENERGY_THRESHOLD * floor && energy > SSL_ABSOLUTE_ENERGY_THRESHOLD){
 			// sound signal
+			m_voice_found = true;
 			float angle;
 			float weight;
 			m_ssl.process(m_input_channels, input, &angle, &weight);
@@ -88,11 +91,22 @@ namespace Beam{
 				m_source_found = true;
 			}
 		}
+		else{
+			m_voice_found = false;
+		}
 		float std_dev;
 		int valid;
 		int num;
 		m_ssl.get_average(m_time, p_angle, &m_confidence, &std_dev, &num, &valid);
 		m_angle = *p_angle;
+	}
+
+	void Pipeline::dereverbration(std::vector<std::complex<float> >* input){
+		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+			//m_dereverb[channel].normalize_cepstral(input[channel], m_voice_found);
+			m_dereverb[channel].suppress(input[channel], m_voice_found);
+		}
+		//m_dereverb[0].suppress(input, m_voice_found);
 	}
 
 	void Pipeline::smart_calibration(std::vector<std::complex<float> >* input){

@@ -63,7 +63,9 @@ int main(int argc, char* argv[]){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			trans.analyze(input[channel], frequency_input[channel]); // transform
 		}
+		
 		Beam::Pipeline::instance()->preprocess(frequency_input); // phase compensation
+		//Beam::Pipeline::instance()->dereverbration(frequency_input); // de-reverbration
 		float angle;
 		Beam::Pipeline::instance()->source_localize(frequency_input, &angle); // sound source localization & noise suppression
 		Beam::Pipeline::instance()->smart_calibration(frequency_input); // calibration

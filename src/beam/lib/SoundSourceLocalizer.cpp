@@ -98,12 +98,12 @@ namespace Beam{
 			ssl_sum[min_index] += sample_amplitude;
 
 			// TODO: spatial filtering here
-			//float angle_diff = fabs(m_angle[min_index] - m_average);
-			//if (angle_diff > 0.25f){
-			//	for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-			//		input_[channel][bin] *= expf(-angle_diff);
-			//	}
-			//}
+			/*float angle_diff = fabs(m_angle[min_index] - m_average);
+			if (angle_diff > 0.25f){
+				for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+					input_[channel][bin] *= expf(-angle_diff);
+				}
+			}*/
 		}
 		auto iter = std::max_element(ssl_sum, ssl_sum + NUM_ANGLES);
 		float weight_max = *iter;

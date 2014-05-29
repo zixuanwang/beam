@@ -5,6 +5,7 @@
 #include "Beamformer.h"
 #include "Calibrator.h"
 #include "DelaySumBeamformer.h"
+#include "DeReverb.h"
 #include "DSPFilter.h"
 #include "FFT.h"
 #include "GlobalConfig.h"
@@ -22,6 +23,7 @@ namespace Beam{
 		void preprocess(std::vector<std::complex<float> >* input);
 		// if the sound source can be localized, the angle is store in p_angle.
 		void source_localize(std::vector<std::complex<float> >* input, float* p_angle);
+		void dereverbration(std::vector<std::complex<float> >* input);
 		void smart_calibration(std::vector<std::complex<float> >* input);
 		void beamforming(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output);
 		void postprocessing(std::vector<std::complex<float> >& input);
@@ -36,7 +38,8 @@ namespace Beam{
 		std::vector<std::complex<float> > m_band_pass_filter; // band pass filter
 		NoiseSuppressor m_pre_noise_suppressor[MAX_MICROPHONES]; // for phase compensation in the preprocessing.
 		NoiseSuppressor m_ssl_noise_suppressor[MAX_MICROPHONES]; // for noise suppression in ssl.
-		NoiseSuppressor m_pre_suppressor[MAX_MICROPHONES]; // for testing.
+		NoiseSuppressor m_pre_suppressor[MAX_MICROPHONES]; // for noise suppression.
+		DeReverb m_dereverb[MAX_MICROPHONES];
 		NoiseSuppressor m_out_noise_suppressor; // for frequency shifting the output.
 		Tracker m_noise_floor; // VAD
 		SoundSourceLocalizer m_ssl; // SSL
@@ -44,6 +47,7 @@ namespace Beam{
 		Beamformer m_beamformer; // BF
 		float m_confidence;
 		float m_angle; // sound source angle
+		bool m_voice_found; // result of VAD
 		bool m_source_found;
 		// gains.
 		std::vector<std::complex<float> > m_dynamic_gains[MAX_MICROPHONES];
