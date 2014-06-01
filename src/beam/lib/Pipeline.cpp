@@ -55,7 +55,7 @@ namespace Beam{
 			for (int bin = 0; bin < FRAME_SIZE; ++bin){
 				input[channel][bin] *= m_dynamic_gains[channel][bin];
 			}
-			//m_pre_noise_suppressor[channel].phase_compensation(input[channel]);
+			m_pre_noise_suppressor[channel].phase_compensation(input[channel]);
 		}
 	}
 
@@ -75,7 +75,7 @@ namespace Beam{
 		//  but we do cary to suppress stationaty noises
 		double energy = 0.0;
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-			m_ssl_noise_suppressor[channel].noise_compensation(m_input_channels[channel]);
+			//m_ssl_noise_suppressor[channel].noise_compensation(m_input_channels[channel]);
 			energy += (double)Utils::computeRMS(m_input_channels[channel]);
 		}
 		energy /= MAX_MICROPHONES;
@@ -104,9 +104,9 @@ namespace Beam{
 	void Pipeline::dereverbration(std::vector<std::complex<float> >* input){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			//m_dereverb[channel].normalize_cepstral(input[channel], m_voice_found);
-			m_dereverb[channel].suppress(input[channel], m_voice_found);
+			m_dereverb[channel].suppress(input[channel]);
 		}
-		//m_dereverb[0].suppress(input, m_voice_found);
+		//m_dereverb[0].suppress(input);
 	}
 
 	void Pipeline::smart_calibration(std::vector<std::complex<float> >* input){

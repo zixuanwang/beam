@@ -3,7 +3,7 @@
 namespace Beam{
 	DeReverb::DeReverb() : m_voice_frame_count(0), m_voice_found(false), m_tail_found(false), m_tail_count(0){
 		m_cepstral_mean.assign(FRAME_SIZE, std::complex<float>(0.f, 0.f));
-		m_init_energy.assign(FRAME_SIZE, 0.f);
+		m_init_energy.assign(FRAME_SIZE, -1.f);
 		for (int i = 0; i < FRAME_SIZE; ++i){
 			m_energy[i].assign(TAIL_FRAME_SIZE, 0.f);
 		}
@@ -40,7 +40,39 @@ namespace Beam{
 		}
 	}
 
-	void DeReverb::suppress(std::vector<std::complex<float> >& input, bool voice_found){
+	void DeReverb::suppress(std::vector<std::complex<float> >& input){
+		for (int bin = 0; bin < FRAME_SIZE; ++bin){
+			float energy = Utils::norm_complex(input[bin]);
+			if (energy == 0.f){
+				continue;
+			}
+			if (m_init_energy[bin] == -1.f){
+				m_init_energy[bin] = energy;
+			}
+			else{
+				m_init_energy[bin] = 0.9f * m_init_energy[bin] + 0.1f * energy;
+			}
+			m_energy_list[bin].push_back(m_init_energy[bin]);
+			if (m_energy_list[bin].size() > TAIL_FRAME_SIZE){
+				m_energy_list[bin].pop_front();
+			}
+			if (m_energy_list[bin].size() == TAIL_FRAME_SIZE){
+				auto iter = m_energy_list[bin].begin();
+				float xx = *iter++;
+				float rr = expf(-3.f * 10.62f * 0.05f) * xx;
+				float s = Utils::abs_complex(input[bin]);
+				float sqrt_rr = sqrtf(rr);
+				float gain = 0.f;
+				if (s > 0.4f * sqrt_rr){
+					gain = (s - 0.4f * sqrt_rr) / s;
+				}
+				else{
+					gain = 0.15f * sqrt_rr / s;
+				}
+				input[bin] *= gain;
+			}
+		}
+
 		/*if (voice_found){
 			for (int bin = 0; bin < FRAME_SIZE; ++bin){
 				m_init_energy[bin] = Utils::norm_complex(input[bin]);
@@ -66,7 +98,7 @@ namespace Beam{
 			}
 		}
 		m_voice_found = voice_found;*/
-		for (int bin = 0; bin < FRAME_SIZE; ++bin){
+	/*	for (int bin = 0; bin < FRAME_SIZE; ++bin){
 			float element = Utils::abs_complex(input[bin]);
 			if (m_energy_list[bin].size() == TAIL_FRAME_SIZE){
 				float model = 0.f;
@@ -89,7 +121,7 @@ namespace Beam{
 				m_energy_list[bin].pop_front();
 			}
 			m_energy_list[bin].push_back(element);
-		}
+		}*/
 	}
 
 	float DeReverb::compute_tau(float init_energy, const std::vector<float>& tail_energy){

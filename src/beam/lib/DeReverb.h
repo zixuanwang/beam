@@ -5,7 +5,7 @@
 #include "Utils.h"
 #include <list>
 
-#define TAIL_FRAME_SIZE 8
+#define TAIL_FRAME_SIZE 3
 
 namespace Beam{
 	class DeReverb {
@@ -15,7 +15,7 @@ namespace Beam{
 		// cepstral mean subtraction.
 		void normalize_cepstral(std::vector<std::complex<float> >& input, bool voice_found);
 		// reverbration suppression.
-		void suppress(std::vector<std::complex<float> >& input, bool voice_found);
+		void suppress(std::vector<std::complex<float> >& input);
 		// compute tau for one frequency bin.
 		float compute_tau(float init_energy, const std::vector<float>& tail_energy);
 		void update_tau(const std::vector<float>& tau);
