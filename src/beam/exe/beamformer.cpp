@@ -21,6 +21,10 @@ void parse_command_line(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]){
+	arma::fmat a = arma::zeros<arma::fmat>(3, 3);
+	std::cout << a << std::endl;
+	std::cout << arma::det(a) << std::endl;
+	/*
 	parse_command_line(argc, argv);
 	Beam::WavReader reader(input_file);
 	Beam::WavWriter writer(output_file, 16000, 1);
@@ -78,10 +82,10 @@ int main(int argc, char* argv[]){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			input_prev[channel].assign(input_current[channel].begin(), input_current[channel].end());
 		}
-		//std::cout << frame_count++ << " frames are converted..." << std::endl;
 	}
 	delete[] buf;
 	delete[] output_buf;
 	std::cout << "conversion done..." << std::endl;
+	*/
 	return 0;
 }

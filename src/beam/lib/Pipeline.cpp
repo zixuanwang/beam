@@ -103,7 +103,6 @@ namespace Beam{
 
 	void Pipeline::dereverbration(std::vector<std::complex<float> >* input){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-			//m_dereverb[channel].normalize_cepstral(input[channel], m_voice_found);
 			m_dereverb[channel].suppress(input[channel]);
 		}
 		//m_dereverb[0].suppress(input);

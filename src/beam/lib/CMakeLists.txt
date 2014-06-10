@@ -11,6 +11,7 @@ SET(libbeam_sources
 	MicArrayDescriptor.h
 	MicArrayWeights.h
 	Microphone.h Microphone.cpp
+	MVDRBeamformer.h MVDRBeamformer.cpp
 	NoiseSuppressor.h NoiseSuppressor.cpp
 	Pipeline.h Pipeline.cpp
 	SoundSourceLocalizer.h SoundSourceLocalizer.cpp

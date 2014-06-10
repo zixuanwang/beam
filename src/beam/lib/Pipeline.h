@@ -9,6 +9,7 @@
 #include "DSPFilter.h"
 #include "FFT.h"
 #include "GlobalConfig.h"
+#include "MVDRBeamformer.h"
 #include "NoiseSuppressor.h"
 #include "SoundSourceLocalizer.h"
 #include "Tracker.h"
@@ -44,7 +45,7 @@ namespace Beam{
 		Tracker m_noise_floor; // VAD
 		SoundSourceLocalizer m_ssl; // SSL
 		Calibrator m_calibrator; // Calibrator
-		Beamformer m_beamformer; // BF
+		DelaySumBeamformer m_beamformer; // BF
 		float m_confidence;
 		float m_angle; // sound source angle
 		bool m_voice_found; // result of VAD

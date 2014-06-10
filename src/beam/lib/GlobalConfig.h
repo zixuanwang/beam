@@ -8,7 +8,7 @@ namespace Beam{
 #define MAX_GAIN_SUBBANDS 5
 #define SAMPLE_RATE 16000
 #define SOUND_SPEED 342.0
-#define USE_MCLT true
+#define USE_MCLT false
 }
 
 #endif /* GLOBALCONFIG_H_ */
