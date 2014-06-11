@@ -45,7 +45,7 @@ namespace Beam{
 		Tracker m_noise_floor; // VAD
 		SoundSourceLocalizer m_ssl; // SSL
 		Calibrator m_calibrator; // Calibrator
-		DelaySumBeamformer m_beamformer; // BF
+		MVDRBeamformer m_beamformer; // BF
 		float m_confidence;
 		float m_angle; // sound source angle
 		bool m_voice_found; // result of VAD

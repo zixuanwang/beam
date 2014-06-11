@@ -120,7 +120,7 @@ namespace Beam{
 	}
 
 	void Pipeline::beamforming(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output){
-		m_beamformer.compute(input, output, m_angle, m_confidence, m_time);
+		m_beamformer.compute(input, output, m_angle, m_confidence, m_time, m_voice_found);
 	}
 
 	void Pipeline::postprocessing(std::vector<std::complex<float> >& input){

@@ -12,7 +12,6 @@ FIND_PACKAGE(Eigen3)
 
 INCLUDE_DIRECTORIES(
 ${CMAKE_CURRENT_SOURCE_DIR}
-${EIGEN3_INCLUDE_DIR}
 )
 SET( LIBRARY_OUTPUT_PATH ${beam_BINARY_DIR}/../lib CACHE PATH
      "Output directory for the beamformer library" )
