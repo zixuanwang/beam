@@ -29,7 +29,7 @@ namespace Beam{
 		for (int i = 0; i < two_frame_size; ++i){
 			m_input[i] = input[i] * m_ha[i];
 		}
-		AecCcsFwdFFT(m_input, out, (unsigned int)two_frame_size);
+		AecCcsFwdFFT(m_input, out, true);
 		// only copy the first half
 		for (int i = 0; i < FRAME_SIZE; ++i){
 			output[i].real(out[i]);
@@ -49,7 +49,7 @@ namespace Beam{
 		for (int i = FRAME_SIZE + 1; i < two_frame_size; ++i){
 			in[i] = input[two_frame_size - i].imag();
 		}
-		AecCcsInvFFT(in, m_current, (unsigned int)two_frame_size);
+		AecCcsInvFFT(in, m_current, true);
 		for (int i = 0; i < two_frame_size; ++i){
 			m_current[i] /= (float)two_frame_size;
 		}
@@ -152,7 +152,7 @@ namespace Beam{
 		const float wi4 = 0.951056516295154f;  // -sin(4pi/5)
 		float tempbuf[4 * FRAME_SIZE];
 		float sin_tab[FRAME_SIZE / 2 + 1];
-		int FFTSize = FRAME_SIZE * 2;
+		unsigned int FFTSize = FRAME_SIZE * 2;
 		for (unsigned int i = 0; i <= FRAME_SIZE / 2; i++) {
 			sin_tab[i] = (float)sinf(2.0f * (float)PI * i / FFTSize);
 		}
@@ -568,9 +568,9 @@ namespace Beam{
 		const float wi4 = -0.951056516295154f;  // sin(8pi/5)
 		float tempbuf[4 * FRAME_SIZE];
 		float sin_tab[FRAME_SIZE / 2 + 1];
-		int FFTSize = 2 * FRAME_SIZE;
-		for (int i = 0; i <= FFTSize / 4; i++) {
-			sin_tab[i] = (float)sinf(2.0f * (float)PI * i / FFTSize);
+		unsigned int FFTSize = 2 * FRAME_SIZE;
+		for (unsigned int i = 0; i <= FFTSize / 4; i++) {
+			sin_tab[i] = sinf(2.0f * (float)PI * i / FFTSize);
 		}
 		unsigned int base, step, N_base;
 		unsigned int i, j, k;   // loop indices
