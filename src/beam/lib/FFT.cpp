@@ -140,7 +140,7 @@ namespace Beam{
 
 	Qin Li, Feb 18, 2005
 	***************************************************************************/
-	void FFT::AecCcsFwdFFT(float * xin, float * xout, unsigned int FFTSize){
+	void FFT::AecCcsFwdFFT(float * xin, float * xout, bool coeffOrder){
 		// sin and cos table for base 5 FFT
 		const float wr1 = 0.309016994374947f;  // cos(2pi/5)
 		const float wr2 = -0.809016994374947f;  // cos(4pi/5)
@@ -150,18 +150,19 @@ namespace Beam{
 		const float wi2 = -0.587785252292473f;  // -sin(4pi/5)
 		const float wi3 = 0.587785252292473f;  // -sin(6pi/5)
 		const float wi4 = 0.951056516295154f;  // -sin(4pi/5)
-
-		float * tempbuf = new float[2 * FFTSize];
-		float * sin_tab = new float[FFTSize / 4 + 1];
-		for (unsigned int i = 0; i <= FFTSize / 4; i++) {
+		float tempbuf[4 * FRAME_SIZE];
+		float sin_tab[FRAME_SIZE / 2 + 1];
+		int FFTSize = FRAME_SIZE * 2;
+		for (unsigned int i = 0; i <= FRAME_SIZE / 2; i++) {
 			sin_tab[i] = (float)sinf(2.0f * (float)PI * i / FFTSize);
 		}
 		unsigned int base, step, N_base;
 		unsigned int i, j, k;   // loop indices
 		float * cos_tab, *x;
 
-		if (xin != xout) {
-			memcpy(xout, xin, FFTSize*sizeof(float));
+		if (xin != xout)
+		{
+			memcpy_s(xout, FFTSize*sizeof(float), xin, FFTSize*sizeof(float));
 		}
 		x = xout;
 
@@ -232,6 +233,8 @@ namespace Beam{
 				18  (10010)                 15  (01111)
 				19  (10011)                 19  (10011)
 				***********************************************************************/
+				if (base*(N_base - 1) + 4 >= FFTSize)
+					return;
 
 				for (i = 0, j = 0; i < N_base && j < N_base; i++)
 				{
@@ -272,6 +275,9 @@ namespace Beam{
 				}
 			}
 			else{  // base == 15
+
+				if (base*(N_base - 1) + 14 >= FFTSize)
+					return;
 
 				for (i = 0, j = 0; i < N_base && j < N_base; i++)
 				{
@@ -494,8 +500,20 @@ namespace Beam{
 			N_base /= 2;     // N_base*step = FFT_SIZE
 
 		} // while loop
-		delete[] sin_tab;
-		delete[] tempbuf;
+
+		if (!coeffOrder)
+		{   // change order from DFT_COEFF_ORDER_AEC to DFT_COEFF_ORDER_NRM
+			tempbuf[0] = xout[0];
+			tempbuf[1] = 0;
+			for (i = 1; i < FFTSize / 2; i++)
+			{
+				tempbuf[2 * i] = xout[i];
+				tempbuf[2 * i + 1] = xout[FFTSize - i];
+			}
+			tempbuf[FFTSize] = xout[FFTSize / 2];
+			tempbuf[FFTSize + 1] = 0;
+			memcpy_s(xout, (FFTSize + 2)*sizeof(float), tempbuf, (FFTSize + 2)*sizeof(float));
+		}
 	}
 
 	/***************************************************************************
@@ -537,7 +555,7 @@ namespace Beam{
 
 	Qin Li, Feb 18, 2005
 	***************************************************************************/
-	void FFT::AecCcsInvFFT(float * xin, float * xout, unsigned int FFTSize) {
+	void FFT::AecCcsInvFFT(float * xin, float * xout, bool coeffOrder) {
 
 		// sin and cos table for base 5 FFT
 		const float wr1 = 0.309016994374947f;  // cos(2pi/5)
@@ -548,20 +566,44 @@ namespace Beam{
 		const float wi2 = 0.587785252292473f;  // sin(4pi/5)
 		const float wi3 = -0.587785252292473f;  // sin(6pi/5)
 		const float wi4 = -0.951056516295154f;  // sin(8pi/5)
-		float * tempbuf = new float[2 * FFTSize];
-		float * sin_tab = new float[FFTSize / 4 + 1];
-		for (unsigned int i = 0; i <= FFTSize / 4; i++) {
+		float tempbuf[4 * FRAME_SIZE];
+		float sin_tab[FRAME_SIZE / 2 + 1];
+		int FFTSize = 2 * FRAME_SIZE;
+		for (int i = 0; i <= FFTSize / 4; i++) {
 			sin_tab[i] = (float)sinf(2.0f * (float)PI * i / FFTSize);
 		}
 		unsigned int base, step, N_base;
 		unsigned int i, j, k;   // loop indices
-		float * cos_tab, *x;
+		float *cos_tab, *x, *pfTemp;
 		cos_tab = sin_tab + FFTSize / 4;
-		if (xin != xout)
+		if (coeffOrder)
 		{
-			memcpy(xout, xin, FFTSize*sizeof(float));
+			if (xin != xout)
+			{
+				memcpy_s(xout, FFTSize*sizeof(float), xin, FFTSize*sizeof(float));
+			}
+			x = xout;
 		}
-		x = xout;
+		else
+		{   // change order from DFT_COEFF_ORDER_NRM to DFT_COEFF_ORDER_AEC
+			if (xin != xout)
+			{
+				pfTemp = xin;
+			}
+			else{
+				memcpy_s(tempbuf, (FFTSize + 2)*sizeof(float), xin, (FFTSize + 2)*sizeof(float));
+				pfTemp = tempbuf;
+			}
+
+			xout[0] = pfTemp[0];
+			for (i = 1; i < FFTSize / 2; i++)
+			{
+				xout[i] = pfTemp[i * 2];
+				xout[FFTSize - i] = pfTemp[i * 2 + 1];
+			}
+			xout[FFTSize / 2] = pfTemp[FFTSize];
+			x = xout;
+		}
 
 		if ((FFTSize & (-(int)FFTSize)) == FFTSize) // detect if FFTSize is power of 2
 		{
@@ -772,6 +814,8 @@ namespace Beam{
 				15  (01111)                   18  (10010)
 				19  (10011)                   19  (10011)
 				***********************************************************************/
+				if (base*(N_base - 1) + 4 >= FFTSize)
+					return;
 
 				for (i = 0, j = 0; i < N_base && j < N_base; i++)
 				{
@@ -812,6 +856,9 @@ namespace Beam{
 				}
 			}
 			else{  // base = 15
+
+				if (base*(N_base - 1) + 14 >= FFTSize)
+					return;
 
 				for (i = 0, j = 0; i < N_base && j < N_base; i++)
 				{
@@ -882,8 +929,6 @@ namespace Beam{
 				}
 			}
 		}
-		delete[] sin_tab;
-		delete[] tempbuf;
 	}
 }
 

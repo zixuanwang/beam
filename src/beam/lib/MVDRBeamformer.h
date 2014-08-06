@@ -13,7 +13,6 @@ namespace Beam{
 		~MVDRBeamformer();
 		void compute(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, float angle, float confidence, double time, bool voice = false);
 	private:
-		int m_frame;
 		std::vector<Eigen::Matrix<std::complex<float>, MAX_MICROPHONES, MAX_MICROPHONES> > m_nn;
 	};
 }

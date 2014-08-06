@@ -5,7 +5,7 @@ namespace Beam{
 
 	Pipeline::Pipeline() : m_noise_floor(20.0, 0.04, 30000.0, 0.0){
 		// initialize band pass filter.
-		DSPFilter::band_pass_mclt(m_band_pass_filter, 500.0 / SAMPLE_RATE, 1000.0 / SAMPLE_RATE, 2000.0 / SAMPLE_RATE, 3500.0 / SAMPLE_RATE);
+		DSPFilter::band_pass_mclt(m_band_pass_filter, 500.f / SAMPLE_RATE, 1000.f / SAMPLE_RATE, 2000.f / SAMPLE_RATE, 3500.f / SAMPLE_RATE);
 		// initialize noise suppressors.
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			m_ssl_noise_suppressor[channel].init(SAMPLE_RATE, FRAME_SIZE, 1.f, 10.f);
@@ -27,6 +27,17 @@ namespace Beam{
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			m_input_channels[channel].assign(FRAME_SIZE, std::complex<float>(0.f, 0.f));
 		}
+		// initialize input buffers
+		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+			std::fill(m_input_prev[channel], m_input_prev[channel] + FRAME_SIZE, 0.f);
+			std::fill(m_input[channel], m_input[channel] + 2 * FRAME_SIZE, 0.f);
+		}
+		std::fill(m_output_prev, m_output_prev + FRAME_SIZE, 0.f);
+		std::fill(m_output, m_output + 2 * FRAME_SIZE, 0.f);
+		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+			m_frequency_input[channel].assign(FRAME_SIZE, std::complex<float>(0.f, 0.f));
+		}
+		m_frequency_output.assign(FRAME_SIZE, std::complex<float>(0.f, 0.f));
 		// initialize gains.
 		expand_gain();
 		m_refresh_gain = 0;
@@ -39,6 +50,8 @@ namespace Beam{
 		m_voice_found = false;
 		// initialize m_source_found.
 		m_source_found = false;
+		// initialize m_frame_number.
+		m_frame_number = 0;
 	}
 
 	Pipeline* Pipeline::instance(){
@@ -48,10 +61,127 @@ namespace Beam{
 		return p_instance;
 	}
 
+	void Pipeline::phase_compensation(float* fft_ptr, bool analysis){
+		int fftSize = FRAME_SIZE * 2;
+		float* realPtr = fft_ptr + 1;
+		float* imagPtr = fft_ptr + fftSize - 1;
+
+		if ((((m_frame_number & 0x03) == 1) && analysis) ||
+			(((m_frame_number & 0x03) == 3) && !analysis))
+		{
+			// first sample X[1]
+			float fltTemp = *realPtr;
+			*realPtr = -*imagPtr;
+			*imagPtr = fltTemp;
+			realPtr++;
+			imagPtr--;
+			for (int i = 2; i < fftSize / 2; i = i + 2)
+			{
+				// index i is corresponding to X[i].
+				fltTemp = *realPtr;
+				*realPtr = *imagPtr;
+				*imagPtr = -fltTemp;
+				realPtr++;
+				imagPtr--;
+				fltTemp = *realPtr;
+				*realPtr = -*imagPtr;
+				*imagPtr = fltTemp;
+				realPtr++;
+				imagPtr--;
+			}
+		}
+		else if ((((m_frame_number & 0x03) == 1) && !analysis) ||
+			(((m_frame_number & 0x03) == 3) && analysis))
+		{
+			// First sample, X[1]
+			float fltTemp = *realPtr;
+			*realPtr = *imagPtr;
+			*imagPtr = -fltTemp;
+			realPtr++;
+			imagPtr--;
+			for (int i = 2; i < fftSize / 2; i = i + 2)
+			{
+				// index i is corresponding to X[i].
+				fltTemp = *realPtr;
+				*realPtr = -*imagPtr;
+				*imagPtr = fltTemp;
+				realPtr++;
+				imagPtr--;
+				fltTemp = *realPtr;
+				*realPtr = *imagPtr;
+				*imagPtr = -fltTemp;
+				realPtr++;
+				imagPtr--;
+			}
+		}
+		else if ((m_frame_number & 0x03) == 2)
+		{  // phase compensation term is -1
+			for (int i = 1; i < fftSize / 2; i++)
+			{
+				*realPtr = -*realPtr;
+				*imagPtr = -*imagPtr;
+				realPtr++;
+				imagPtr--;
+			}
+			// CTODO: can not do phase compensation for coefficient fftSize/2 - 1
+		}
+	}
+
+	void Pipeline::convert_input(std::vector<std::complex<float> >& input, float* fft_ptr){
+		int two_frame_size = 2 * FRAME_SIZE;
+		input[0].real(fft_ptr[0]);
+		input[0].imag(0.f);
+		for (int i = 1; i < FRAME_SIZE; ++i){
+			input[i].real(fft_ptr[i]);
+			input[i].imag(fft_ptr[two_frame_size - i]);
+		}
+	}
+
+	void Pipeline::convert_output(const std::vector<std::complex<float> >& output, float* fft_ptr){
+		int two_frame_size = 2 * FRAME_SIZE;
+		fft_ptr[0] = output[0].real();
+		fft_ptr[FRAME_SIZE] = 0.f;
+		for (int i = 1; i < FRAME_SIZE; ++i){
+			fft_ptr[i] = output[i].real();
+			fft_ptr[two_frame_size - i] = output[i].imag();
+		}
+	}
+
+	void Pipeline::process(float input[MAX_MICROPHONES][FRAME_SIZE], float output[FRAME_SIZE]){
+		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+			for (int i = 0; i < FRAME_SIZE; ++i) {
+				m_input[channel][i] = m_input_prev[channel][i];
+			}
+			for (int i = FRAME_SIZE; i < 2 * FRAME_SIZE; ++i) {
+				m_input[channel][i] = input[channel][i - FRAME_SIZE];
+			}
+			std::copy(input[channel], input[channel] + FRAME_SIZE, m_input_prev[channel]);
+			float input_fft[2 * FRAME_SIZE];
+			MCLT::AecCcsFwdMclt(m_input[channel], input_fft, true);
+			Beam::Pipeline::instance()->phase_compensation(input_fft, true);
+			Beam::Pipeline::instance()->convert_input(m_frequency_input[channel], input_fft);
+		}
+		Beam::Pipeline::instance()->preprocess(m_frequency_input); // noise suppression and dynamic gain
+		float angle;
+		Beam::Pipeline::instance()->source_localize(m_frequency_input, &angle); // sound source localization
+		Beam::Pipeline::instance()->smart_calibration(m_frequency_input); // calibration
+		Beam::Pipeline::instance()->beamforming(m_frequency_input, m_frequency_output); // beamforming
+		Beam::Pipeline::instance()->postprocessing(m_frequency_output); // NS
+		float output_fft[2 * FRAME_SIZE];
+		Beam::Pipeline::instance()->convert_output(m_frequency_output, output_fft);
+		Beam::Pipeline::instance()->phase_compensation(output_fft, false);
+		Beam::MCLT::AecCcsInvMclt(output_fft, m_output, true);
+		for (int i = 0; i < FRAME_SIZE; ++i){
+			output[i] = m_output[i] + m_output_prev[i];
+		}
+		std::copy(m_output + FRAME_SIZE, m_output + 2 * FRAME_SIZE, m_output_prev);
+		++m_frame_number;
+	}
+
 	void Pipeline::preprocess(std::vector<std::complex<float> >* input){
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			// TODO check dynamic gains here.
-			m_pre_suppressor[channel].noise_compensation(input[channel]); // NS here.
+			//m_pre_suppressor[channel].noise_compensation(input[channel]); // NS here.
 			for (int bin = 0; bin < FRAME_SIZE; ++bin){
 				input[channel][bin] *= m_dynamic_gains[channel][bin];
 			}
@@ -120,12 +250,12 @@ namespace Beam{
 	}
 
 	void Pipeline::beamforming(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output){
-		m_beamformer.compute(input, output, m_angle, m_confidence, m_time, m_voice_found);
+		m_beamformer.compute(input, output, 0.f, m_confidence, m_time);
 	}
 
 	void Pipeline::postprocessing(std::vector<std::complex<float> >& input){
 		//m_out_noise_suppressor.frequency_shifting(input);
-		//m_out_noise_suppressor.noise_compensation(input);
+		m_out_noise_suppressor.noise_compensation(input);
 	}
 
 	void Pipeline::expand_gain(){

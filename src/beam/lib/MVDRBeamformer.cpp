@@ -1,8 +1,8 @@
 #include "MVDRBeamformer.h"
 
 namespace Beam {
-MVDRBeamformer::MVDRBeamformer() : m_frame(0) {
-	m_nn.assign(FRAME_SIZE, Eigen::Matrix<std::complex<float>, MAX_MICROPHONES, MAX_MICROPHONES>());
+MVDRBeamformer::MVDRBeamformer() {
+	m_nn.assign(FRAME_SIZE, Eigen::Matrix<std::complex<float>, MAX_MICROPHONES, MAX_MICROPHONES>::Identity());
 }
 
 MVDRBeamformer::~MVDRBeamformer() {
@@ -20,11 +20,7 @@ void MVDRBeamformer::compute(std::vector<std::complex<float> >* input,
 				n(i, 0) = input[i][bin];
 			}
 			Eigen::Matrix<std::complex<float>, MAX_MICROPHONES, MAX_MICROPHONES> nn = n * n.adjoint();
-			if (m_frame == 0) {
-				m_nn[bin] = nn;
-			} else {
-				m_nn[bin] = m_nn[bin] * 0.9f + nn * 0.1f;
-			}
+			m_nn[bin] = m_nn[bin] * 0.99f + nn * 0.01f;
 		}
 	}
 	// compute time delay
@@ -58,6 +54,5 @@ void MVDRBeamformer::compute(std::vector<std::complex<float> >* input,
 			output[bin] = sum / denom;
 		}
 	}
-	++m_frame;
 }
 }

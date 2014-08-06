@@ -8,6 +8,8 @@ namespace Beam{
 			m_in_stream.seekg(22, m_in_stream.beg);
 			m_in_stream.read((char*)&m_channels, sizeof(m_channels));
 			m_in_stream.read((char*)&m_sample_rate, sizeof(m_sample_rate));
+			m_in_stream.seekg(34, m_in_stream.beg);
+			m_in_stream.read((char*)&m_bit_per_sample, sizeof(m_bit_per_sample));
 			m_in_stream.seekg(40, m_in_stream.beg);
 			m_in_stream.read((char*)&m_size, sizeof(m_size));
 			m_in_stream.seekg(0, m_in_stream.end);
@@ -38,14 +40,28 @@ namespace Beam{
 		}
 	}
 
-	void WavReader::convert_format(std::vector<float>* input, char* buf, int buf_size){
+	//void WavReader::convert_format(std::vector<float>* input, char* buf, int buf_size){
+	//	short* ptr = (short*)(buf);
+	//	int len = buf_size / m_bit_per_sample * 8 / m_channels;
+	//	for (int channel = 0; channel < m_channels; ++channel){
+	//		input[channel].assign(len, 0.f);
+	//		for (int bin = 0; bin < len; ++bin){
+	//			input[channel][bin] = (float)(ptr[m_channels * bin + channel]);
+	//		}
+	//	}
+	//}
+
+	void WavReader::convert_format(float input[][FRAME_SIZE], char* buf, int buf_size){
 		short* ptr = (short*)(buf);
-		int len = buf_size / 2 / MAX_MICROPHONES;
-		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-			input[channel].assign(len, 0.f);
+		int len = buf_size / m_bit_per_sample * 8 / m_channels;
+		for (int channel = 0; channel < m_channels; ++channel){
 			for (int bin = 0; bin < len; ++bin){
-				input[channel][bin] = (float)(ptr[MAX_MICROPHONES * bin + channel]);
+				input[channel][bin] = (float)(ptr[m_channels * bin + channel]);
 			}
 		}
+	}
+
+	int WavReader::get_channels(){
+		return (int)m_channels;
 	}
 }

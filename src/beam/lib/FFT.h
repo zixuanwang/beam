@@ -21,9 +21,9 @@ namespace Beam{
 		/// the output has half frame delay.
 		void synthesize(std::vector<std::complex<float> >& input, std::vector<float>& output);
 		/// implementation of fft. copy from aecfft.c
-		void AecCcsFwdFFT(float * xin, float * xout, unsigned int FFTSize);
+		static void AecCcsFwdFFT(float * xin, float * xout, bool coeffOrder);
 		/// implementation of ifft. copy from aecfft.c
-		void AecCcsInvFFT(float * xin, float * xout, unsigned int FFTSize);
+		static void AecCcsInvFFT(float * xin, float * xout, bool coeffOrder);
 	private:
 		float m_ha[FRAME_SIZE * 2];
 		float m_input[FRAME_SIZE * 2];
@@ -33,8 +33,8 @@ namespace Beam{
 		// data structures to compute FFT.
 		static float wr_15[15];
 		static float wi_15[15];
-		void FwdFFT_base15(float * xin, float * xout);
-		void InvFFT_base15(float * xin, float * xout);
+		static void FwdFFT_base15(float * xin, float * xout);
+		static void InvFFT_base15(float * xin, float * xout);
 	};
 }
 

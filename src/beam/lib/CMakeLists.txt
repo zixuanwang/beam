@@ -6,12 +6,14 @@ SET(libbeam_sources
 	DeReverb.h DeReverb.cpp
 	DSPFilter.h DSPFilter.cpp
 	FFT.h FFT.cpp
+	GSCBeamformer.h GSCBeamformer.cpp
 	GlobalConfig.h
+	GSCBeamformer.h GSCBeamformer.cpp
 	KinectConfig.h KinectConfig.cpp
+	MCLT.h MCLT.cpp
 	MicArrayDescriptor.h
 	MicArrayWeights.h
 	Microphone.h Microphone.cpp
-	MVDRBeamformer.h MVDRBeamformer.cpp
 	NoiseSuppressor.h NoiseSuppressor.cpp
 	Pipeline.h Pipeline.cpp
 	SoundSourceLocalizer.h SoundSourceLocalizer.cpp

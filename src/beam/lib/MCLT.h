@@ -1,7 +1,7 @@
 #ifndef MCLT_H_
 #define MCLT_H_
 
-#include "fftw3.h"
+#include "FFT.h"
 #include "GlobalConfig.h"
 #include "Utils.h"
 
@@ -20,6 +20,9 @@ namespace Beam{
 		/// the output must have 2 * FRAME_SIZE.
 		/// the output has half frame delay.
 		void synthesize(std::vector<std::complex<float> >& input, std::vector<float>& output);
+
+		static void AecCcsFwdMclt(float* pInput, float* pOutput, bool coeffOrder);
+		static void AecCcsInvMclt(float * pInput, float * pOutput, bool coeffOrder);
 	private:
 		float m_coeff;
 		float m_input[FRAME_SIZE * 2];
