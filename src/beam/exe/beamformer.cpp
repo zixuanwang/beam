@@ -1,8 +1,4 @@
-#include "beam/lib/Beamformer.h"
-#include "beam/lib/FFT.h"
-#include "beam/lib/MCLT.h"
 #include "beam/lib/Pipeline.h"
-#include "beam/lib/Utils.h"
 #include <iostream>
 
 std::string input_file;

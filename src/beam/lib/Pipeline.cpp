@@ -205,7 +205,7 @@ namespace Beam{
 		//  but we do cary to suppress stationaty noises
 		double energy = 0.0;
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-			//m_ssl_noise_suppressor[channel].noise_compensation(m_input_channels[channel]);
+			m_ssl_noise_suppressor[channel].noise_compensation(m_input_channels[channel]);
 			energy += (double)Utils::computeRMS(m_input_channels[channel]);
 		}
 		energy /= MAX_MICROPHONES;
@@ -250,7 +250,7 @@ namespace Beam{
 	}
 
 	void Pipeline::beamforming(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output){
-		m_beamformer.compute(input, output, 0.f, m_confidence, m_time);
+		m_beamformer.compute(input, output, m_angle, m_confidence, m_time);
 	}
 
 	void Pipeline::postprocessing(std::vector<std::complex<float> >& input){
