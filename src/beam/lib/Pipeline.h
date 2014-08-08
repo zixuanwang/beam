@@ -11,6 +11,7 @@
 #include "GlobalConfig.h"
 #include "GSCBeamformer.h"
 #include "MCLT.h"
+#include "MsrNS.h"
 #include "NoiseSuppressor.h"
 #include "SoundSourceLocalizer.h"
 #include "Tracker.h"
@@ -28,6 +29,8 @@ namespace Beam{
 		void convert_output(const std::vector<std::complex<float> >& output, float* fft_ptr);
 		/// process frame.
 		void process(float input[MAX_MICROPHONES][FRAME_SIZE], float output[FRAME_SIZE]);
+		/// noise suppression.
+		void suppress_noise(float* fft_ptr);
 
 		// multi-channel inputs.
 		void preprocess(std::vector<std::complex<float> >* input);
@@ -73,6 +76,8 @@ namespace Beam{
 		std::vector<std::complex<float> > m_frequency_output;
 		// timer. every time preprocess is called, the time is updated.
 		double m_time;
+		MsrNS m_ns;
+		MsrVAD m_vad;
 	};
 }
 

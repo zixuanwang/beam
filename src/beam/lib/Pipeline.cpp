@@ -128,22 +128,20 @@ namespace Beam{
 	}
 
 	void Pipeline::convert_input(std::vector<std::complex<float> >& input, float* fft_ptr){
-		int two_frame_size = 2 * FRAME_SIZE;
 		input[0].real(fft_ptr[0]);
 		input[0].imag(0.f);
 		for (int i = 1; i < FRAME_SIZE; ++i){
 			input[i].real(fft_ptr[i]);
-			input[i].imag(fft_ptr[two_frame_size - i]);
+			input[i].imag(fft_ptr[TWO_FRAME_SIZE - i]);
 		}
 	}
 
 	void Pipeline::convert_output(const std::vector<std::complex<float> >& output, float* fft_ptr){
-		int two_frame_size = 2 * FRAME_SIZE;
 		fft_ptr[0] = output[0].real();
 		fft_ptr[FRAME_SIZE] = 0.f;
 		for (int i = 1; i < FRAME_SIZE; ++i){
 			fft_ptr[i] = output[i].real();
-			fft_ptr[two_frame_size - i] = output[i].imag();
+			fft_ptr[TWO_FRAME_SIZE - i] = output[i].imag();
 		}
 	}
 
@@ -158,18 +156,18 @@ namespace Beam{
 			std::copy(input[channel], input[channel] + FRAME_SIZE, m_input_prev[channel]);
 			float input_fft[2 * FRAME_SIZE];
 			MCLT::AecCcsFwdMclt(m_input[channel], input_fft, true);
-			Beam::Pipeline::instance()->phase_compensation(input_fft, true);
-			Beam::Pipeline::instance()->convert_input(m_frequency_input[channel], input_fft);
+			phase_compensation(input_fft, true);
+			convert_input(m_frequency_input[channel], input_fft);
 		}
-		Beam::Pipeline::instance()->preprocess(m_frequency_input); // noise suppression and dynamic gain
+		preprocess(m_frequency_input); // noise suppression and dynamic gain
 		float angle;
-		Beam::Pipeline::instance()->source_localize(m_frequency_input, &angle); // sound source localization
-		Beam::Pipeline::instance()->smart_calibration(m_frequency_input); // calibration
-		Beam::Pipeline::instance()->beamforming(m_frequency_input, m_frequency_output); // beamforming
-		Beam::Pipeline::instance()->postprocessing(m_frequency_output); // NS
+		source_localize(m_frequency_input, &angle); // sound source localization
+		smart_calibration(m_frequency_input); // calibration
+		beamforming(m_frequency_input, m_frequency_output); // beamforming
 		float output_fft[2 * FRAME_SIZE];
-		Beam::Pipeline::instance()->convert_output(m_frequency_output, output_fft);
-		Beam::Pipeline::instance()->phase_compensation(output_fft, false);
+		convert_output(m_frequency_output, output_fft);
+		suppress_noise(output_fft);
+		phase_compensation(output_fft, false);
 		Beam::MCLT::AecCcsInvMclt(output_fft, m_output, true);
 		for (int i = 0; i < FRAME_SIZE; ++i){
 			output[i] = m_output[i] + m_output_prev[i];
@@ -187,6 +185,19 @@ namespace Beam{
 			}
 			m_pre_noise_suppressor[channel].phase_compensation(input[channel]);
 		}
+	}
+
+	void Pipeline::suppress_noise(float* fft_ptr){
+		int iSNR = (int)m_vad.GetSNR();
+		bool enableNS = true;
+		if (iSNR > 130) {
+			enableNS = false;
+		}
+		else if (iSNR < 25) {
+			enableNS = true;
+		}
+		m_vad.process(fft_ptr);
+		m_ns.process(fft_ptr, &m_vad, enableNS);
 	}
 
 	void Pipeline::source_localize(std::vector<std::complex<float> >* input, float* p_angle){
