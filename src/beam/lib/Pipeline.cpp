@@ -166,6 +166,9 @@ namespace Beam{
 		beamforming(m_frequency_input, m_frequency_output); // beamforming
 		float output_fft[2 * FRAME_SIZE];
 		convert_output(m_frequency_output, output_fft);
+		for (int i = 1; i < TWO_FRAME_SIZE; ++i){
+			output_fft[i] *= 2.f;
+		}
 		suppress_noise(output_fft);
 		phase_compensation(output_fft, false);
 		Beam::MCLT::AecCcsInvMclt(output_fft, m_output, true);
@@ -180,9 +183,9 @@ namespace Beam{
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			// TODO check dynamic gains here.
 			//m_pre_suppressor[channel].noise_compensation(input[channel]); // NS here.
-			for (int bin = 0; bin < FRAME_SIZE; ++bin){
-				input[channel][bin] *= m_dynamic_gains[channel][bin];
-			}
+			//for (int bin = 0; bin < FRAME_SIZE; ++bin){
+			//	input[channel][bin] *= m_dynamic_gains[channel][bin];
+			//}
 			m_pre_noise_suppressor[channel].phase_compensation(input[channel]);
 		}
 	}
