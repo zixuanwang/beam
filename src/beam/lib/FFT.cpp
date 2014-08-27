@@ -12,62 +12,59 @@ namespace Beam{
 
 
 	FFT::FFT(){
-		int two_frame_size = 2 * FRAME_SIZE;
-		for (int i = 0; i < two_frame_size; ++i){
-			m_ha[i] = sinf(i * (float)PI / two_frame_size);
-			m_prev_prev[i] = 0.f;
-			m_prev[i] = 0.f;
+		for (int i = 0; i < TWO_FRAME_SIZE; ++i){
+			m_ha[i] = sinf(i * (float)PI / TWO_FRAME_SIZE);
 		}
+		std::fill(m_prev, m_prev + FRAME_SIZE, 0.f);
+		std::fill(m_input_prev, m_input_prev + FRAME_SIZE, 0.f);
 	}
 	FFT::~FFT(){
 	
 	}
 
 	void FFT::analyze(std::vector<float>& input, std::vector<std::complex<float> >& output){
-		const int two_frame_size = 2 * FRAME_SIZE;
-		float out[two_frame_size];
-		for (int i = 0; i < two_frame_size; ++i){
-			m_input[i] = input[i] * m_ha[i];
+		float out[TWO_FRAME_SIZE];
+		for (int i = 0; i < FRAME_SIZE; ++i){
+			m_input[i] = m_input_prev[i];
+		}
+		for (int i = FRAME_SIZE; i < TWO_FRAME_SIZE; ++i){
+			m_input[i] = input[i - FRAME_SIZE];
+		}
+		for (int i = 0; i < TWO_FRAME_SIZE; ++i){
+			m_input[i] *= m_ha[i];
 		}
 		AecCcsFwdFFT(m_input, out, true);
 		// only copy the first half
 		for (int i = 0; i < FRAME_SIZE; ++i){
 			output[i].real(out[i]);
 		}
-		for (int i = FRAME_SIZE + 1; i < two_frame_size; ++i){
-			output[two_frame_size - i].imag(out[i]);
+		for (int i = FRAME_SIZE + 1; i < TWO_FRAME_SIZE; ++i){
+			output[TWO_FRAME_SIZE - i].imag(out[i]);
 		}
 		output[0].imag(0.f);
+		std::copy(input.begin(), input.end(), m_input_prev);
 	}
 
 	void FFT::synthesize(std::vector<std::complex<float> >& input, std::vector<float>& output){
-		const int two_frame_size = 2 * FRAME_SIZE;
-		float in[two_frame_size] = { 0.f };
+		float in[TWO_FRAME_SIZE] = { 0.f };
 		for (int i = 0; i < FRAME_SIZE; ++i){
 			in[i] = input[i].real();
 		}
-		for (int i = FRAME_SIZE + 1; i < two_frame_size; ++i){
-			in[i] = input[two_frame_size - i].imag();
+		for (int i = FRAME_SIZE + 1; i < TWO_FRAME_SIZE; ++i){
+			in[i] = input[TWO_FRAME_SIZE - i].imag();
 		}
 		AecCcsInvFFT(in, m_current, true);
-		for (int i = 0; i < two_frame_size; ++i){
-			m_current[i] /= (float)two_frame_size;
+		for (int i = 0; i < TWO_FRAME_SIZE; ++i){
+			m_current[i] /= (float)TWO_FRAME_SIZE;
 		}
-		for (int i = 0; i < two_frame_size; ++i){
+		for (int i = 0; i < TWO_FRAME_SIZE; ++i){
 			m_current[i] *= m_ha[i];
 		}
 		// first half
 		for (int i = 0; i < FRAME_SIZE; ++i){
-			output[i] = m_prev_prev[i + FRAME_SIZE] + m_prev[i];
+			output[i] = m_prev[i] + m_current[i];
 		}
-		// second half
-		for (int i = FRAME_SIZE; i < two_frame_size; ++i){
-			output[i] = m_current[i - FRAME_SIZE] + m_prev[i];
-		}
-		// copy to prev prev
-		memcpy(m_prev_prev, m_prev, two_frame_size * sizeof(float));
-		// copy to prev
-		memcpy(m_prev, m_current, two_frame_size * sizeof(float));
+		std::copy(m_current + FRAME_SIZE, m_current + TWO_FRAME_SIZE, m_prev);
 	}
 
 	void FFT::FwdFFT_base15(float * xin, float * xout){

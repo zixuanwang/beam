@@ -3,75 +3,159 @@
 namespace Beam{
 	GSCBeamformer::GSCBeamformer(){
 		for (int i = 0; i < MAX_MICROPHONES; ++i){
-			m_bm[i].assign(FRAME_SIZE, std::complex<float>(1.f, 0.f));
-			m_y[i].assign(FRAME_SIZE, std::complex<float>(0.f, 0.f));
-			m_w[i].assign(FRAME_SIZE, std::complex<float>(1.f / MAX_MICROPHONES, 0.f));
+			std::fill(m_input_prev[i], m_input_prev[i] + FRAME_SIZE, 0.f);
+			std::fill(m_y_prev[i], m_y_prev[i] + FRAME_SIZE, 0.f);
+			std::fill(m_bm[i], m_bm[i] + BM_N, 1.f / BM_N);
+			std::fill(m_mc[i], m_mc[i] + MC_L, 1.f / MC_L);
 		}
+		std::fill(m_d_prev, m_d_prev + FRAME_SIZE, 0.f);
 	}
 
 	GSCBeamformer::~GSCBeamformer(){
 	
 	}
 
-	void GSCBeamformer::compute(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output, float angle, float confidence, double time, bool voice){
-		// compute time delay
-		std::vector<std::complex<float> > fixed_beamformer(FRAME_SIZE);
-		float time_delay[MAX_MICROPHONES] = { 0.f };
-		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-			float distance = KinectConfig::kinect_descriptor.mic[channel].y * sinf(angle);
-			time_delay[channel] = distance / (float)SOUND_SPEED;
+	void GSCBeamformer::compute(float output[FRAME_SIZE], float input[][FRAME_SIZE], float angle, bool voice, float ref[FRAME_SIZE]){
+		// skip delay sum beamformer now.
+		// process in the time domain.
+		int bm_p = 4;
+		int bm_n = 8;
+		float d[FRAME_SIZE] = { 0.f };
+		float y[MAX_MICROPHONES][FRAME_SIZE] = { 0.f };
+		std::fill(output, output + FRAME_SIZE, 0.f);
+		if (ref != NULL){
+			std::copy(ref, ref + FRAME_SIZE, d);
 		}
-		for (int bin = 0; bin < FRAME_SIZE; ++bin){
-			std::complex<float> sum(0.f, 0.f);
-			float rad_freq = (float)(-bin * TWO_PI * SAMPLE_RATE / FRAME_SIZE / 2.f);
-			for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
-				float v = (float)(rad_freq * time_delay[channel]);
-				sum += input[channel][bin] * std::complex<float>(cosf(v), sinf(v));
+		else{
+			for (int bin = 0; bin < FRAME_SIZE; ++bin){
+				for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+					d[bin] += input[channel][bin];
+				}
+				d[bin] /= MAX_MICROPHONES;
 			}
-			sum /= (float)MAX_MICROPHONES;
-			fixed_beamformer[bin] = sum;
 		}
-		if (voice){
-			// update adaptive blocking matrix
-			for (int i = 0; i < MAX_MICROPHONES; ++i){
-				for (int bin = 0; bin < FRAME_SIZE; ++bin){
-					float norm = std::norm(fixed_beamformer[bin]);
+		// gsc bm
+
+		for (int k = 0; k < FRAME_SIZE; ++k){
+			if (voice){
+				for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+					float x = 0.f;
+					if (k - BM_P < 0){
+						x = m_input_prev[channel][FRAME_SIZE + k - BM_P];
+					}
+					else{
+						x = input[channel][k - BM_P];
+					}
+					float sum = 0.f;
+					float norm = 0.f;
+					for (int j = 0; j < BM_N; ++j){
+						if (k - j < 0){
+							float v = m_d_prev[FRAME_SIZE + k - j];
+							sum += m_bm[channel][j] * v;
+							norm += v * v;
+						}
+						else{
+							float v = d[k - j];
+							sum += m_bm[channel][j] * v;
+							norm += v * v;
+						}
+					}
+					norm = sqrtf(norm);
+					float e = x - sum;
 					if (norm != 0.f){
-						m_bm[i][bin] += (input[i][bin] - m_bm[i][bin] * fixed_beamformer[bin]) * fixed_beamformer[bin] / norm;
+						for (int j = 0; j < BM_N; ++j){
+							if (k - j < 0){
+								m_bm[channel][j] += e / norm * m_d_prev[FRAME_SIZE + k - j];
+							}
+							else{
+								m_bm[channel][j] += e / norm * d[k - j];
+							}
+						}
 					}
 				}
 			}
-		}
-		for (int i = 0; i < MAX_MICROPHONES; ++i){
-			for (int bin = 0; bin < FRAME_SIZE; ++bin){
-				m_y[i][bin] = input[i][bin] - m_bm[i][bin] * fixed_beamformer[bin];
-			}
-		}
-		for (int bin = 0; bin < FRAME_SIZE; ++bin){
-			output[bin] = m_y[0][bin];
-		}
-		/*
-		if (!voice){
-			// update adaptive input canceller
-			for (int bin = 0; bin < FRAME_SIZE; ++bin){
-				std::complex<float> sum(0.f, 0.f);
-				std::complex<float> norm(0.f, 0.f);
-				for (int i = 0; i < MAX_MICROPHONES; ++i){
-					sum += m_w[i][bin] * m_y[i][bin];
-					norm += std::norm(m_y[i][bin]);
+			// compute y
+			for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+				float x = 0.f;
+				if (k - BM_P < 0){
+					x = m_input_prev[channel][FRAME_SIZE + k - BM_P];
 				}
-				for (int i = 0; i < MAX_MICROPHONES; ++i){
-					m_w[i][bin] -= (fixed_beamformer[bin] - sum) * m_y[i][bin] / norm;
+				else{
+					x = input[channel][k - BM_P];
+				}
+				float sum = 0.f;
+				for (int j = 0; j < BM_N; ++j){
+					if (k - j < 0){
+						float v = m_d_prev[FRAME_SIZE + k - j];
+						sum += m_bm[channel][j] * v;
+					}
+					else{
+						float v = d[k - j];
+						sum += m_bm[channel][j] * v;
+					}
+				}
+				y[channel][k] = x - sum;
+			}
+			// gsc mc
+			if (!voice){
+				float z = 0.f;
+				float norm = 0.f;
+				for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+					for (int j = 0; j < MC_L; ++j){
+						if (k - j < 0){
+							z -= m_y_prev[channel][FRAME_SIZE + k - j] * m_mc[channel][j];
+							norm += m_y_prev[channel][FRAME_SIZE + k - j] * m_y_prev[channel][FRAME_SIZE + k - j];
+						}
+						else{
+							z -= y[channel][k - j] * m_mc[channel][j];
+							norm += y[channel][k - j] * y[channel][k - j];
+						}
+					}
+				}
+				if (k - MC_Q < 0){
+					z += m_d_prev[FRAME_SIZE + k - MC_Q];
+				}
+				else{
+					z += d[k - MC_Q];
+				}
+				if (norm != 0.f){
+					for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+						for (int j = 0; j < MC_L; ++j){
+							if (k - j < 0){
+								m_mc[channel][j] += z / norm * m_y_prev[channel][FRAME_SIZE + k - j];
+							}
+							else{
+								m_mc[channel][j] += z / norm * y[channel][k - j];
+							}
+						}
+					}
 				}
 			}
-		}
-		for (int bin = 0; bin < FRAME_SIZE; ++bin){
-			std::complex<float> sum(0.f, 0.f);
-			for (int i = 0; i < MAX_MICROPHONES; ++i){
-				sum += m_w[i][bin] * m_y[i][bin];
+			float z = 0.f;
+			for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+				for (int j = 0; j < MC_L; ++j){
+					if (k - j < 0){
+						z -= m_y_prev[channel][FRAME_SIZE + k - j] * m_mc[channel][j];
+					}
+					else{
+						z -= y[channel][k - j] * m_mc[channel][j];
+					}
+				}
 			}
-			output[bin] = fixed_beamformer[bin] - sum;
+			if (k - MC_Q < 0){
+				z += m_d_prev[FRAME_SIZE + k - MC_Q];
+			}
+			else{
+				z += d[k - MC_Q];
+			}
+			output[k] = z;
 		}
-		*/
+		// copy input. copy y.
+		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+			std::copy(input[channel], input[channel] + FRAME_SIZE, m_input_prev[channel]);
+			std::copy(y[channel], y[channel] + FRAME_SIZE, m_y_prev[channel]);
+		}
+		// copy d.
+		std::copy(d, d + FRAME_SIZE, m_d_prev);
 	}
 }

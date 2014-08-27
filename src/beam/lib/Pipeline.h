@@ -41,6 +41,7 @@ namespace Beam{
 		void beamforming(std::vector<std::complex<float> >* input, std::vector<std::complex<float> >& output);
 		void postprocessing(std::vector<std::complex<float> >& input);
 		void expand_gain();
+		void gain_control(bool voice, float input[FRAME_SIZE]);
 	private:
 		// singleton.
 		Pipeline();
@@ -57,7 +58,9 @@ namespace Beam{
 		Tracker m_noise_floor; // VAD
 		SoundSourceLocalizer m_ssl; // SSL
 		Calibrator m_calibrator; // Calibrator
-		Beamformer m_beamformer; // BF
+		Beamformer m_beamformer; // MVDR BF
+		//GSCBeamformer m_gsc;
+		//DelaySumBeamformer m_beamformer; // DS BF
 		float m_confidence;
 		float m_angle; // sound source angle
 		bool m_voice_found; // result of VAD
@@ -69,7 +72,7 @@ namespace Beam{
 		std::vector<std::complex<float> > m_input_channels[MAX_MICROPHONES];
 		int m_refresh_gain;
 		float m_input_prev[MAX_MICROPHONES][FRAME_SIZE];
-		float m_input[MAX_MICROPHONES][2 * FRAME_SIZE];
+		float m_input[MAX_MICROPHONES][TWO_FRAME_SIZE];
 		float m_output_prev[FRAME_SIZE];
 		float m_output[2 * FRAME_SIZE];
 		std::vector<std::complex<float> > m_frequency_input[MAX_MICROPHONES];
@@ -78,6 +81,11 @@ namespace Beam{
 		double m_time;
 		MsrNS m_ns;
 		MsrVAD m_vad;
+		float m_voice_engery;
+		float m_gain;
+		float m_gsc_output_prev[FRAME_SIZE];
+		float m_gsc_input_prev[MAX_MICROPHONES][FRAME_SIZE];
+		float m_ref_prev[FRAME_SIZE];
 	};
 }
 

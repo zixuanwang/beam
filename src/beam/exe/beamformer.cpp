@@ -20,8 +20,9 @@ int main(int argc, char* argv[]) {
 	parse_command_line(argc, argv);
 	Beam::WavReader reader(input_file);
 	int channels = reader.get_channels();
+	int bytes_per_sample = reader.get_bit_per_sample() / 8;
 	Beam::WavWriter writer(output_file, 16000, 1, 16);
-	int buf_size = FRAME_SIZE * channels * 2;
+	int buf_size = FRAME_SIZE * channels * bytes_per_sample;
 	int output_buf_size = FRAME_SIZE * 2;
 	char* buf = new char[buf_size];
 	char* output_buf = new char[output_buf_size];
@@ -39,7 +40,7 @@ int main(int argc, char* argv[]) {
 		// output is 1 channel. it contains 256 float numbers.
 		Beam::Pipeline::instance()->process(input, output); 
 		for (int i = 0; i < FRAME_SIZE; ++i) {
-			output_ptr[i] = (short) output[i];
+			output_ptr[i] = (short) (output[i] * SHRT_MAX);
 		}
 		writer.write(output_buf, FRAME_SIZE * 2);
 	}

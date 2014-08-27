@@ -52,6 +52,13 @@ namespace Beam{
 		m_source_found = false;
 		// initialize m_frame_number.
 		m_frame_number = 0;
+		m_voice_engery = 0.f;
+		std::fill(m_gsc_output_prev, m_gsc_output_prev + FRAME_SIZE, 0.f);
+		std::fill(m_ref_prev, m_ref_prev + FRAME_SIZE, 0.f);
+		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+			std::fill(m_gsc_input_prev[channel], m_gsc_input_prev[channel] + FRAME_SIZE, 0.f);
+		}
+		m_gain = 10.f;
 	}
 
 	Pipeline* Pipeline::instance(){
@@ -150,32 +157,30 @@ namespace Beam{
 			for (int i = 0; i < FRAME_SIZE; ++i) {
 				m_input[channel][i] = m_input_prev[channel][i];
 			}
-			for (int i = FRAME_SIZE; i < 2 * FRAME_SIZE; ++i) {
+			for (int i = FRAME_SIZE; i < TWO_FRAME_SIZE; ++i) {
 				m_input[channel][i] = input[channel][i - FRAME_SIZE];
 			}
 			std::copy(input[channel], input[channel] + FRAME_SIZE, m_input_prev[channel]);
-			float input_fft[2 * FRAME_SIZE];
+			float input_fft[TWO_FRAME_SIZE];
 			MCLT::AecCcsFwdMclt(m_input[channel], input_fft, true);
 			phase_compensation(input_fft, true);
 			convert_input(m_frequency_input[channel], input_fft);
 		}
+		float angle = 0.f;
 		preprocess(m_frequency_input); // noise suppression and dynamic gain
-		float angle;
 		source_localize(m_frequency_input, &angle); // sound source localization
-		smart_calibration(m_frequency_input); // calibration
-		beamforming(m_frequency_input, m_frequency_output); // beamforming
+		//smart_calibration(m_frequency_input);
+		beamforming(m_frequency_input, m_frequency_output);
 		float output_fft[2 * FRAME_SIZE];
 		convert_output(m_frequency_output, output_fft);
-		for (int i = 1; i < TWO_FRAME_SIZE; ++i){
-			output_fft[i] *= 2.f;
-		}
 		suppress_noise(output_fft);
 		phase_compensation(output_fft, false);
 		Beam::MCLT::AecCcsInvMclt(output_fft, m_output, true);
 		for (int i = 0; i < FRAME_SIZE; ++i){
 			output[i] = m_output[i] + m_output_prev[i];
 		}
-		std::copy(m_output + FRAME_SIZE, m_output + 2 * FRAME_SIZE, m_output_prev);
+		gain_control(m_voice_found, output);
+		std::copy(m_output + FRAME_SIZE, m_output + TWO_FRAME_SIZE, m_output_prev);
 		++m_frame_number;
 	}
 
@@ -224,7 +229,14 @@ namespace Beam{
 		}
 		energy /= MAX_MICROPHONES;
 		double floor = m_noise_floor.nextLevel(m_time, energy);
-		if (energy > SSL_RELATIVE_ENERGY_THRESHOLD * floor && energy > SSL_ABSOLUTE_ENERGY_THRESHOLD){
+		//if (energy > SSL_RELATIVE_ENERGY_THRESHOLD * floor && energy > SSL_ABSOLUTE_ENERGY_THRESHOLD){
+		if (energy > SSL_RELATIVE_ENERGY_THRESHOLD * floor){
+			if (m_voice_engery == 0.f){
+				m_voice_engery = (float)energy;
+			}
+			else{
+				m_voice_engery = 0.99f * m_voice_engery + 0.01f * (float)energy;
+			}
 			// sound signal
 			m_voice_found = true;
 			float angle;
@@ -311,6 +323,22 @@ namespace Beam{
 				for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 					m_dynamic_gains[channel][index] = Utils::interpolate(m_persistent_gains[channel][interp_low], m_persistent_gains[channel][interp_high], t);
 				}
+			}
+		}
+	}
+
+	void Pipeline::gain_control(bool voice, float input[FRAME_SIZE]) {
+		std::cout << m_gain << std::endl;
+		for (int i = 0; i < FRAME_SIZE; ++i){
+			input[i] *= m_gain;
+		}
+		if (voice){
+			float max = *std::max_element(input, input + FRAME_SIZE);
+			if (max > 0.5f){
+				m_gain *= 0.99f;
+			}
+			if (max < 0.001f){
+				m_gain *= 1.01f;
 			}
 		}
 	}

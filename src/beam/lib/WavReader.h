@@ -16,6 +16,8 @@ namespace Beam{
 		//void convert_format(std::vector<float>* input, char* buf, int buf_size);
 		void convert_format(float input[][FRAME_SIZE], char* buf, int buf_size);
 		int get_channels();
+		int get_bit_per_sample();
+		int swap_int32(int val);
 	private:
 		std::ifstream m_in_stream;
 		int m_sample_rate;

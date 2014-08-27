@@ -47,20 +47,20 @@ namespace Beam{
 
 		//This XBox code expects the data in the [-1.0,1.0] range so scale appropiately
 		//const FLOAT32 toFloat = float(1u << (ctrVAD ? 25 : 23));
-		const float toFloat = float(1u << 15);
+		//const float toFloat = float(1u << 15);
 
-		for (unsigned int u = 0; u < TWO_FRAME_SIZE; ++u)
-		{
-			SignalSpecIn[u] = (float)fft_ptr[u] / toFloat;
-		}
+		//for (unsigned int u = 0; u < TWO_FRAME_SIZE; ++u)
+		//{
+		//	SignalSpecIn[u] = (float)fft_ptr[u] / toFloat;
+		//}
 
 		// per bin and per frame soft VAD
 		float likemean = 0.0f;
 		float likelogmean = 0.0f;
 		for (unsigned int u = m_MecBegBin; u <= m_MecEndBin; u++) { // optimized for non-zero frequency bins
 			// calculate signal power
-			float MicRe = SignalSpecIn[u];
-			float MicIm = SignalSpecIn[TWO_FRAME_SIZE - u];
+			float MicRe = fft_ptr[u];
+			float MicIm = fft_ptr[TWO_FRAME_SIZE - u];
 			SignalPower[u] = MicRe * MicRe + MicIm * MicIm;
 
 			// update the prior and posterios SNRs
@@ -132,7 +132,7 @@ namespace Beam{
 		float fSNR = 0.0f;
 		for (unsigned int u = m_MecBegBin; u <= m_MecEndBin; u++) {
 			if (u >= m_LogLikelihoodBegBin && u <= m_LogLikelihoodEndBin) {
-				fSNR = SignalPower[u] / (NoiseModel[u] + 1e-6f);
+				fSNR = SignalPower[u] / (NoiseModel[u] + 1e-10f);
 				fSNR = std::max(1.0f, std::min(20000.0f, fSNR));
 				fSNRam += fSNR;
 			}
@@ -149,6 +149,6 @@ namespace Beam{
 		m_fEnergy /= (m_MecEndBin - m_MecBegBin + 1);
 		fSNRam /= (m_MecEndBin - m_MecBegBin + 1);
 		float beta = m_MecFrameDuration*framePresProb / 10.0f;  // time constant in seconds
-		m_fSNR = (1.0f - beta)*m_fSNR + beta*fSNRam;
+		m_fSNR = (1.0f - beta) * m_fSNR + beta * fSNRam;
 	}
 }

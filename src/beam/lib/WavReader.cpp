@@ -52,16 +52,38 @@ namespace Beam{
 	//}
 
 	void WavReader::convert_format(float input[][FRAME_SIZE], char* buf, int buf_size){
-		short* ptr = (short*)(buf);
-		int len = buf_size / m_bit_per_sample * 8 / m_channels;
-		for (int channel = 0; channel < m_channels; ++channel){
-			for (int bin = 0; bin < len; ++bin){
-				input[channel][bin] = (float)(ptr[m_channels * bin + channel]);
+		if (m_bit_per_sample == 16){
+			short* ptr = (short*)(buf);
+			int len = buf_size / m_bit_per_sample * 8 / m_channels;
+			for (int channel = 0; channel < m_channels; ++channel){
+				for (int bin = 0; bin < len; ++bin){
+					input[channel][bin] = (float)(ptr[m_channels * bin + channel]) / SHRT_MAX;
+				}
+			}
+		}
+		if (m_bit_per_sample == 32){
+			// for new kinect
+			int* ptr = (int*)(buf);
+			int len = buf_size / m_bit_per_sample * 8 / m_channels;
+			for (int channel = 0; channel < m_channels; ++channel){
+				for (int bin = 0; bin < len; ++bin){
+					// switch channels because of different geometry.
+					input[channel][bin] = (float)ptr[m_channels * bin + channel] / INT_MAX;			
+				}
 			}
 		}
 	}
 
 	int WavReader::get_channels(){
 		return (int)m_channels;
+	}
+
+	int WavReader::get_bit_per_sample(){
+		return (int)m_bit_per_sample;
+	}
+
+	int WavReader::swap_int32(int val){
+		val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
+		return (val << 16) | ((val >> 16) & 0xFFFF);
 	}
 }

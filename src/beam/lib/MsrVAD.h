@@ -19,6 +19,7 @@ namespace Beam{
 		float GetSNR() { return m_fSNR; }
 		unsigned int GetBeginBin() { return m_MecBegBin; }
 		unsigned int GetEndBin() { return m_MecEndBin; }
+		float GetSpeechPresenceProb(){ return m_fFramePresProb; }
 	private:
 		float m_VAD_TAUN;
 		float m_VAD_TAUS;
