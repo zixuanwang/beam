@@ -86,6 +86,7 @@ namespace Beam{
 		float m_gsc_output_prev[FRAME_SIZE];
 		float m_gsc_input_prev[MAX_MICROPHONES][FRAME_SIZE];
 		float m_ref_prev[FRAME_SIZE];
+		FFT m_fft;
 	};
 }
 

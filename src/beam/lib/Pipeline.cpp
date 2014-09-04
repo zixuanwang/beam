@@ -58,7 +58,7 @@ namespace Beam{
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			std::fill(m_gsc_input_prev[channel], m_gsc_input_prev[channel] + FRAME_SIZE, 0.f);
 		}
-		m_gain = 10.f;
+		m_gain = 1.f;
 	}
 
 	Pipeline* Pipeline::instance(){
@@ -153,7 +153,10 @@ namespace Beam{
 	}
 
 	void Pipeline::process(float input[MAX_MICROPHONES][FRAME_SIZE], float output[FRAME_SIZE]){
-		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+		for (int channel = 0; channel < AVALABLE_MICROPHONES; ++channel){
+			for (int i = 0; i < FRAME_SIZE; ++i){
+				input[channel][i] *= m_gain;
+			}
 			for (int i = 0; i < FRAME_SIZE; ++i) {
 				m_input[channel][i] = m_input_prev[channel][i];
 			}
@@ -185,7 +188,7 @@ namespace Beam{
 	}
 
 	void Pipeline::preprocess(std::vector<std::complex<float> >* input){
-		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+		for (int channel = 0; channel < AVALABLE_MICROPHONES; ++channel){
 			// TODO check dynamic gains here.
 			//m_pre_suppressor[channel].noise_compensation(input[channel]); // NS here.
 			//for (int bin = 0; bin < FRAME_SIZE; ++bin){
@@ -214,7 +217,7 @@ namespace Beam{
 		//  Apply the SSL band pass filter to the input channels
 		//  and have a separate copy of the input channels 
 		//  for SSL purposes only
-		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+		for (int channel = 0; channel < AVALABLE_MICROPHONES; ++channel){
 			for (size_t bin = 0; bin < m_band_pass_filter.size(); ++bin){
 				m_input_channels[channel][bin] = input[channel][bin] * m_band_pass_filter[bin];
 			}
@@ -223,11 +226,11 @@ namespace Beam{
 		//  We do heavy noise suppression as we don't care about the musical noises
 		//  but we do cary to suppress stationaty noises
 		double energy = 0.0;
-		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
+		for (int channel = 0; channel < AVALABLE_MICROPHONES; ++channel){
 			m_ssl_noise_suppressor[channel].noise_compensation(m_input_channels[channel]);
 			energy += (double)Utils::computeRMS(m_input_channels[channel]);
 		}
-		energy /= MAX_MICROPHONES;
+		energy /= AVALABLE_MICROPHONES;
 		double floor = m_noise_floor.nextLevel(m_time, energy);
 		//if (energy > SSL_RELATIVE_ENERGY_THRESHOLD * floor && energy > SSL_ABSOLUTE_ENERGY_THRESHOLD){
 		if (energy > SSL_RELATIVE_ENERGY_THRESHOLD * floor){
@@ -261,7 +264,6 @@ namespace Beam{
 		for (int channel = 0; channel < MAX_MICROPHONES; ++channel){
 			m_dereverb[channel].suppress(input[channel]);
 		}
-		//m_dereverb[0].suppress(input);
 	}
 
 	void Pipeline::smart_calibration(std::vector<std::complex<float> >* input){
@@ -328,17 +330,13 @@ namespace Beam{
 	}
 
 	void Pipeline::gain_control(bool voice, float input[FRAME_SIZE]) {
-		std::cout << m_gain << std::endl;
-		for (int i = 0; i < FRAME_SIZE; ++i){
-			input[i] *= m_gain;
-		}
 		if (voice){
 			float max = *std::max_element(input, input + FRAME_SIZE);
-			if (max > 0.5f){
-				m_gain *= 0.99f;
+			if (max > 0.6f){
+				m_gain *= 0.95f;
 			}
 			if (max < 0.001f){
-				m_gain *= 1.01f;
+				m_gain *= 1.05f;
 			}
 		}
 	}

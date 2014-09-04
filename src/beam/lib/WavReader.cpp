@@ -68,7 +68,7 @@ namespace Beam{
 			for (int channel = 0; channel < m_channels; ++channel){
 				for (int bin = 0; bin < len; ++bin){
 					// switch channels because of different geometry.
-					input[channel][bin] = (float)ptr[m_channels * bin + channel] / INT_MAX;			
+					input[MAX_MICROPHONES - 1 - channel][bin] = (float)ptr[m_channels * bin + channel] / INT_MAX;			
 				}
 			}
 		}

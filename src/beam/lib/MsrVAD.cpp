@@ -39,21 +39,22 @@ namespace Beam{
 	{
 	}
 
+	void MsrVAD::process(std::vector<std::complex<float> >& input){
+		float fft_ptr[TWO_FRAME_SIZE];
+		fft_ptr[0] = input[0].real();
+		fft_ptr[FRAME_SIZE] = 0.f;
+		for (int i = 1; i < FRAME_SIZE; ++i){
+			fft_ptr[i] = input[i].real();
+			fft_ptr[TWO_FRAME_SIZE - i] = input[i].imag();
+		}
+		process(fft_ptr);
+	}
+
 	void MsrVAD::process(float* fft_ptr){
 		const float a00 = 1.0f - m_VAD_A01;
 		const float a11 = 1.0f - m_VAD_A10;
 		const float a00f = 1.0f - m_VAD_A01f;
 		const float a11f = 1.0f - m_VAD_A10f;
-
-		//This XBox code expects the data in the [-1.0,1.0] range so scale appropiately
-		//const FLOAT32 toFloat = float(1u << (ctrVAD ? 25 : 23));
-		//const float toFloat = float(1u << 15);
-
-		//for (unsigned int u = 0; u < TWO_FRAME_SIZE; ++u)
-		//{
-		//	SignalSpecIn[u] = (float)fft_ptr[u] / toFloat;
-		//}
-
 		// per bin and per frame soft VAD
 		float likemean = 0.0f;
 		float likelogmean = 0.0f;

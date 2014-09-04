@@ -2,6 +2,8 @@
 #define MSRVAD_H_
 
 #include <algorithm>
+#include <complex>
+#include <vector>
 #include "GlobalConfig.h"
 #include "Utils.h"
 
@@ -13,6 +15,7 @@ namespace Beam{
 	public:
 		MsrVAD();
 		~MsrVAD();
+		void process(std::vector<std::complex<float> >& input);
 		void process(float* fft_ptr);
 		int* GetMasterSpeechPresenceProbQ30() { return &q30MasterSpeechPresenceProb[0]; }
 		float* GetMasterSignalPowerOverNoiseModel() { return &MasterSignalPowerOverNoiseModel[0]; }
