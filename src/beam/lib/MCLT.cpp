@@ -84,7 +84,8 @@ namespace Beam{
 		// re-oder the output for DFT_COEFF_ORDER_AEC
 		if (coeffOrder)
 		{
-			memcpy_s(pfTempOut, sizeof(float)*uFFTSize, pOutput, sizeof(float)*uFFTSize);
+//			memcpy_s(pfTempOut, sizeof(float)*uFFTSize, pOutput, sizeof(float)*uFFTSize);
+			memcpy(pfTempOut, pOutput, sizeof(float)*uFFTSize);
 			pOutput[0] = pfTempOut[0];
 			for (k = 1; k<uFFTSize / 2; k++)
 			{

@@ -159,7 +159,8 @@ namespace Beam{
 
 		if (xin != xout)
 		{
-			memcpy_s(xout, FFTSize*sizeof(float), xin, FFTSize*sizeof(float));
+//			memcpy_s(xout, FFTSize*sizeof(float), xin, FFTSize*sizeof(float));
+			memcpy(xout, xin, FFTSize*sizeof(float));
 		}
 		x = xout;
 
@@ -509,7 +510,8 @@ namespace Beam{
 			}
 			tempbuf[FFTSize] = xout[FFTSize / 2];
 			tempbuf[FFTSize + 1] = 0;
-			memcpy_s(xout, (FFTSize + 2)*sizeof(float), tempbuf, (FFTSize + 2)*sizeof(float));
+//			memcpy_s(xout, (FFTSize + 2)*sizeof(float), tempbuf, (FFTSize + 2)*sizeof(float));
+			memcpy(xout, tempbuf, (FFTSize + 2)*sizeof(float));
 		}
 	}
 
@@ -577,7 +579,8 @@ namespace Beam{
 		{
 			if (xin != xout)
 			{
-				memcpy_s(xout, FFTSize*sizeof(float), xin, FFTSize*sizeof(float));
+//				memcpy_s(xout, FFTSize*sizeof(float), xin, FFTSize*sizeof(float));
+				memcpy(xout, tempbuf, (FFTSize + 2)*sizeof(float));
 			}
 			x = xout;
 		}
@@ -588,7 +591,8 @@ namespace Beam{
 				pfTemp = xin;
 			}
 			else{
-				memcpy_s(tempbuf, (FFTSize + 2)*sizeof(float), xin, (FFTSize + 2)*sizeof(float));
+//				memcpy_s(tempbuf, (FFTSize + 2)*sizeof(float), xin, (FFTSize + 2)*sizeof(float));
+				memcpy(tempbuf, xin, (FFTSize + 2)*sizeof(float));
 				pfTemp = tempbuf;
 			}
 
